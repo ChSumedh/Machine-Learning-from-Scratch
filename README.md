@@ -1,5 +1,5 @@
 # Machine-Learning-from-Scratch
-🔹 ## Classification
+🔹 Classification
 
     🔹K-Nearest Neighbors (KNN) Classifier
 
@@ -13,7 +13,7 @@
 
 Mini-batch gradient descent
 
-🔹 ## Regression
+🔹 Regression
 
     🔹K-Nearest Neighbors (KNN) Regressor
 
