@@ -11,7 +11,7 @@
 
         Binary classification
 
-Mini-batch gradient descent
+        Mini-batch gradient descent
 
 🔹 Regression
 
