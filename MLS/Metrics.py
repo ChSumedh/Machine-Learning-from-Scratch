@@ -1,0 +1,35 @@
+import numpy as np
+import pandas as pd
+def Y_checker(y,y_t):
+    if y_t is None or y is None:
+        raise ValueError("Inputs can't be none")
+    if not(isinstance(y_t ,np.ndarray)):
+        raise ValueError("y_t has to be a numpy array")
+    if not(isinstance(y,np.ndarray)):
+        raise ValueError("y has to be a numpy array")
+    if y.shape!=y_t.shape:
+        raise ValueError("y and y_t have to have the same shape")
+    if np.isnan(y_t).any():
+        raise ValueError("There shouldn't be NaN values in y_t")
+    if np.isnan(y).any():
+        raise ValueError("There shouldn't be NaN values in y")
+
+def confusion_matrix(y,y_t):
+    Y_checker(y,y_t)
+    classes= set(np.unique(y))|set(np.unique(y_t))
+    cm=np.zeros((classes,classes))
+    cm=pd.DataFrame(cm,columns=classes,index=classes)
+
+    for i in range(y.shape[0]):
+        cm.loc(y[i],y_t[i])+=1
+    return cm
+
+# def classification_report(y,y_t):
+#     cm=confusion_matrix(y,y_t)
+#     cr=pd.DataFrame()
+    
+def rmse(y,y_t):
+    Y_checker(y,y_t)
+    if not (np.issubdtype(y,np.number) and np.issubdtype(y,np.number)):
+        raise ValueError("The inputs have to be numbers")
+    return np.sqrt(np.mean(np.square(y-y_t)))
