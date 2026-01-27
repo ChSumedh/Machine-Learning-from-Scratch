@@ -24,9 +24,15 @@ def confusion_matrix(y,y_t):
         cm.loc(y[i],y_t[i])+=1
     return cm
 
-# def classification_report(y,y_t):
-#     cm=confusion_matrix(y,y_t)
-#     cr=pd.DataFrame()
+def classification_report(y,y_t):
+    classes= set(np.unique(y))|set(np.unique(y_t))
+    cm=confusion_matrix(y,y_t)
+    cr=np.zeros((classes,2))
+    for i in range(len(classes)):
+        cr[i][0]=cm[i]/np.sum(cm[cm.columns[i]])
+        cr[i][1]=cm[i]/np.sum(cm.loc[classes[i],:])
+    cr=pd.DataFrame(cr,columns=["Recall","Precision"],index=classes)
+    return cr
     
 def rmse(y,y_t):
     Y_checker(y,y_t)
