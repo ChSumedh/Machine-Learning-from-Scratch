@@ -21,7 +21,7 @@ def confusion_matrix(y,y_t):
     cm=pd.DataFrame(cm,columns=classes,index=classes)
 
     for i in range(y.shape[0]):
-        cm.loc(y[i],y_t[i])+=1
+        cm.loc[y[i],y_t[i]]+=1
     return cm
 
 def classification_report(y,y_t):
