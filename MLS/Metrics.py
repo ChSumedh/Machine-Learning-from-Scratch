@@ -16,7 +16,9 @@ def Y_checker(y,y_t):
 
 def confusion_matrix(y,y_t):
     Y_checker(y,y_t)
-    classes= sorted(set(np.unique(y))|set(np.unique(y_t)))
+    unique_y = np.unique(y)
+    unique_y_t = np.unique(y_t)
+    classes = np.unique(np.concatenate([unique_y, unique_y_t]))
     classes=list(classes)
     cm=np.zeros((len(classes),len(classes)))
     cm=pd.DataFrame(cm,columns=classes,index=classes)
@@ -26,7 +28,9 @@ def confusion_matrix(y,y_t):
     return cm
 
 def classification_report(y,y_t):
-    classes= sorted(set(np.unique(y))|set(np.unique(y_t)))
+    unique_y = np.unique(y)
+    unique_y_t = np.unique(y_t)
+    classes = np.unique(np.concatenate([unique_y, unique_y_t]))
     classes=list(classes)
     cm=confusion_matrix(y,y_t)
     cr=np.zeros((len(classes),2))
