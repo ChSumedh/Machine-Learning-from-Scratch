@@ -54,13 +54,15 @@ class NaiveBayesClassifier:
 
     @staticmethod
     def normal_likelihood(val,mean,std):
-        return (1/(np.sqrt(2*np.pi)*std))*(np.e**(-0.5*(np.square((val-mean)/std))))
+        if std==0:
+            return 1e-9
+        return max((1/(np.sqrt(2*np.pi)*std))*(np.e**(-0.5*(np.square((val-mean)/std)))),10e-9)
     
     def fit(self,X,y):
         self.X,self.y=Xy_checker(X,y)
         numerical={}
         categorical={}
-        classes=list(self.y.unique()[self.y.columns[0]])
+        classes=list(self.y[self.y.columns[0]].unique())
         class_indices={clas:(self.y[self.y.iloc[:,0]==clas]).index for clas in classes }
 
         #Caluculating Prior Probablities
@@ -121,3 +123,57 @@ class NaiveBayesClassifier:
         ans=ans.reshape((-1,))
 
         return ans
+
+class GaussianClassifier:
+
+    @staticmethod
+    def normal_likelihood(val,mean,sigma):
+        if np.linalg.det(sigma) ==0:
+            return 1e-9
+        return (1/(np.pow(2*np.pi,0.5)*np.sqrt(np.linalg.det(sigma))))*(np.exp(
+            -0.5*np.matmul(np.matmul(np.transpose(val-mean), np.linalg.pinv(sigma)), (val-mean))
+))
+    
+    def fit(self,X,y):
+        X,y=Xy_checker(X,y)
+        if not X.select_dtypes(include=[np.number]).shape[1] == X.shape[1]:
+            raise TypeError("X must contain numbers")
+        if not y.select_dtypes(include=[np.number]).shape[1] == y.shape[1]:
+            raise TypeError("y must contain numbers")
+        self.X=X
+        self.y=y
+        means={}
+        classes=list(self.y[self.y.columns[0]].unique())
+        self.classes=classes
+        class_indices={clas:(self.y[self.y.iloc[:,0]==clas]).index for clas in classes }
+        for clas,index in class_indices.items():
+            curr=self.X.iloc[index]
+            means[clas]=list(curr.mean())
+        sigmas={}
+        for clas in classes:
+            class_data = self.X.iloc[class_indices[clas]]
+            m = np.array(means[clas])
+            centered = class_data.values - m
+            sigmas[clas] = (centered.T @ centered) / len(class_data)
+        self.sigmas=sigmas
+        self.means=means
+    
+    def predict_proba(self,X_t):
+        X_t=X_t_checker(X_t,self.X)
+        probas=[]
+        for i in range(len(X_t)):
+            proba=[]
+            for clas in self.classes:
+                proba.append(self.normal_likelihood(X_t.iloc[i],self.means[clas],self.sigmas[clas]))
+            probas.append(proba)
+        probas=pd.DataFrame(probas,columns=self.classes)
+        return probas
+    
+    def predict(self,X_t):
+        probas=np.array(self.predict_proba(X_t))
+        ans=[]
+        for i in range(probas.shape[0]):
+            idx=(np.argmax(probas[i]))
+            ans.append(self.classes[idx])
+        
+        return np.array(ans)
