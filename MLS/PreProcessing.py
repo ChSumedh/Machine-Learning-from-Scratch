@@ -1,0 +1,264 @@
+import numpy as np
+import pandas as pd
+
+class StandardScaler:
+
+    def __init__(self):
+        self.means=None
+        self.std=None
+
+    @staticmethod
+    def X_checker(X):
+        if X is None:
+            raise ValueError("Inputs can't be none")
+        
+        if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
+            raise ValueError("X has to be a numpy array or DataFrame")
+        
+        if X.ndim!=2:
+            raise ValueError("X has to be 2 dimensional")
+
+        temp=pd.DataFrame(X)
+        if temp.isna().sum().sum():
+            raise ValueError("There shouldn't be NaN values in X")
+        return temp
+
+    def fit(self,X):
+        self.X=self.X_checker(X)
+        self.cols=list(self.X.columns)
+        self.X_=self.X.select_dtypes(include=np.number)
+        self.means={col:self.X_[col].mean() for col in self.X_.columns}
+        self.std={col:self.X_[col].std() for col in self.X_.columns}
+        return self
+    
+    def transform(self,T):
+        t=self.X_checker(T).copy()
+        t_cols=list(t.columns)
+        if self.means is None or self.std is None:
+            raise ValueError("Cannot transform without fitting")
+        
+        for col in t_cols:
+            if col not in self.cols:
+                raise ValueError("The columns of transformed data not present in the data you fit")
+            
+            if t[col].dtype!=self.X[col].dtype:
+                raise ValueError(f"dtype mismatch between in column {col}")
+            
+            if pd.api.types.is_numeric_dtype(t[col]):
+                t[col]=(t[col]-self.means[col])/self.std[col]
+        return t
+    
+    def fit_transform(self,X):
+        self.fit(X)
+        t=self.transform(X)
+        return t
+    
+    def get_params(self):
+        if self.means is None or self.std is None:
+            raise ValueError("Cannot give the params without fitting")
+        params=pd.DataFrame([],index=self.cols,columns=['Mean','Standard Deviation'])
+        for col in self.cols:
+            params.loc[col,'Mean']=self.means[col]
+            params.loc[col,'Standard Deviation']=self.std[col]
+        
+        return params
+
+class MinMaxScaler:
+
+    def __init__(self):
+        self.means=None
+        self.range=None
+
+    @staticmethod
+    def X_checker(X):
+        if X is None:
+            raise ValueError("Inputs can't be none")
+        
+        if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
+            raise ValueError("X has to be a numpy array or DataFrame")
+        
+        if X.ndim!=2:
+            raise ValueError("X has to be 2 dimensional")
+
+        temp=pd.DataFrame(X)
+        if temp.isna().sum().sum():
+            raise ValueError("There shouldn't be NaN values in X")
+        return temp
+
+    def fit(self,X):
+        self.X=self.X_checker(X)
+        self.cols=list(self.X.columns)
+        self.X_=self.X.select_dtypes(include=np.number)
+        self.means={col:self.X_[col].mean() for col in self.X_.columns}
+        self.range={col:self.X_[col].max()-self.X_[col].min() for col in self.X_.columns}
+        return self
+    
+    def transform(self,T):
+        t=self.X_checker(T).copy()
+        t_cols=list(t.columns)
+        if self.means is None or self.range is None:
+            raise ValueError("Cannot transform without fitting")
+        
+        for col in t_cols:
+            if col not in self.cols:
+                raise ValueError("The columns of transformed data not present in the data you fit")
+            
+            if t[col].dtype!=self.X[col].dtype:
+                raise ValueError(f"dtype mismatch in column {col}")
+            
+            if pd.api.types.is_numeric_dtype(t[col]):
+                t[col]=(t[col]-self.means[col])/self.range[col]
+        return t
+    
+    def fit_transform(self,X):
+        self.fit(X)
+        t=self.transform(X)
+        return t
+    
+    def get_params(self):
+        if self.means is None or self.range is None:
+            raise ValueError("Cannot give the params without fitting")
+        params=pd.DataFrame([],index=self.cols,columns=['Mean','Standard Deviation'])
+        for col in self.cols:
+            params.loc[col,'Mean']=self.means[col]
+            params.loc[col,'Range']=self.range[col]
+        
+        return params
+    
+class LabelEncoder:
+    def __init__(self):
+        self.X=None
+        self.labels=None
+        self.enums=None
+    
+    @staticmethod
+    def X_checker(X):
+        if X is None:
+            raise ValueError("Inputs can't be none")
+        
+        if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
+            raise ValueError("X has to be a numpy array or DataFrame")
+        
+        if X.ndim!=2:
+            raise ValueError("X has to be 2 dimensional")
+
+        temp=pd.DataFrame(X)
+        if temp.isna().sum().sum():
+            raise ValueError("There shouldn't be NaN values in X")
+        return temp
+    
+    def fit(self,X):
+        self.X=self.X_checker(X).copy()
+        self.labels = {col:sorted(self.X[col].unique()) for col in self.X.columns if 
+                       not pd.api.types.is_numeric_dtype(self.X[col])}
+        self.enums = {col:{cat: idx for idx, cat in enumerate(self.labels[col])} for col in self.X.columns if
+                      not pd.api.types.is_numeric_dtype(self.X[col])}
+        return self
+    
+    def transform(self,T):
+        if self.X is None:
+            raise ValueError("Cannot transform without no prior fitted data")
+        t=self.X_checker(T).copy()
+        for col in t.columns:
+            if col not in self.X.columns:
+                raise ValueError(f"Column {col} not in fitted data")
+            
+            if t[col].dtype != self.X[col].dtype:
+                raise ValueError(f"dtype mismatch betwwen the fitted data and data to be transformed in {col}")
+            
+            if sorted(t[col].unique())!=self.labels[col]:
+                raise ValueError(f"Category label mismatch in {col}")
+            
+            if not pd.api.types.is_numeric_dtype(t[col]):
+                t[col]=t[col].map(self.enums[col])
+        return t
+    
+    def fit_transform(self,X):
+        self.fit(X)
+        t=self.transform(X)
+        return t
+    
+    def get_params(self):
+        if self.X is None:
+            raise ValueError("Cannot give the params without fitting")
+        dfs = []
+        for col, mapping in self.enums.items():
+            temp_df = pd.DataFrame(list(mapping.items()), columns=['Category', 'Code'])
+            temp_df['Column'] = col 
+            dfs.append(temp_df)
+
+        df = pd.concat(dfs, ignore_index=True)
+        return df
+    
+class OrdinalEncoder:
+    def __init__(self,unknown_map=None):
+        self.X=None
+        self.map={}
+        self.unknown_map=unknown_map
+
+    @staticmethod
+    def X_checker(X):
+        if X is None:
+            raise ValueError("Inputs can't be none")
+        
+        if not(isinstance(X,pd.DataFrame)):
+            raise ValueError("X has to be a DataFrame")
+
+        temp=pd.DataFrame(X,columns=X.columns)
+        if temp.isna().sum().sum():
+            raise ValueError("There shouldn't be NaN values in X")
+        return temp
+    
+    def fit(self,X,order=None):
+        self.X=self.X_checker(X).copy()
+        if order is None:
+            raise ValueError("Order of classes for categorical columns has to be given" \
+            "in the form { categorical column name: [list of categories in it]}")
+        for key,value in order.items():
+            if key not in list(self.X.columns):
+                raise ValueError(f"{key} does not exist in the data you fit")
+            if pd.api.types.is_numeric_dtype(self.X[key]):
+                raise ValueError(f"Dtype mismatch for column {key} ")
+            if sorted(list(value))!=sorted(list(self.X[key].unique())):
+                raise ValueError(f"The categories you entered for {key} don't exist in the data fit")
+            
+            self.map[key]={cat:idx for idx,cat in enumerate(list(value))}
+        
+        return self
+    
+    def transform(self,T):
+        t=self.X_checker(T).copy()
+        if not self.map:
+            raise ValueError("Cannot transform without fitting data")
+        for col in t.columns:
+            if col in self.map.keys():
+                if t[col].dtype!=self.X[col].dtype:
+                    raise ValueError(f"Dtype mismatch between fit data and transform data in the column {col}")
+                
+                if self.unknown_map is None:
+                    unknown_vals = set(t[col].unique()) - set(self.map[col].keys())
+                    if unknown_vals:
+                        raise ValueError(f"Unknown categories: {unknown_vals}")
+                    
+                t[col] = t[col].apply(
+                        lambda x: self.map[col].get(x, self.unknown_map)
+                    )
+        
+        return t
+    
+    def fit_transform(self,X,order=None):
+        self.fit(X,order=order)
+        t=self.transform(X)
+        return t
+    
+    def get_params(self):
+        if not self.map:
+            raise ValueError("Cannot give the params without fitting")
+        dfs = []
+        for col, mapping in self.map.items():
+            temp_df = pd.DataFrame(list(mapping.items()), columns=['Category', 'Code'])
+            temp_df['Column'] = col 
+            dfs.append(temp_df)
+
+        df = pd.concat(dfs, ignore_index=True)
+        return df

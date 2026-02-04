@@ -37,7 +37,8 @@ def classification_report(y,y_t):
     for i in range(len(classes)):
         cr[i][0]=cm.loc[classes[i],classes[i]]/np.sum(cm[cm.columns[i]])
         cr[i][1]=cm.loc[classes[i],classes[i]]/np.sum(cm.loc[classes[i],:])
-    cr=pd.DataFrame(cr,columns=["Precision","Recall"],index=classes)
+        cr[i][2]=2/((1/cr[i][0])+(1/cr[i][1]))
+    cr=pd.DataFrame(cr,columns=["Precision","Recall","F1-Score"],index=classes)
     return cr
 
 def accuracy_score(y,y_t):
