@@ -130,6 +130,7 @@ class LabelEncoder:
         self.X=None
         self.labels=None
         self.enums=None
+        self.enums_inv=None
     
     @staticmethod
     def X_checker(X):
@@ -153,25 +154,42 @@ class LabelEncoder:
                        not pd.api.types.is_numeric_dtype(self.X[col])}
         self.enums = {col:{cat: idx for idx, cat in enumerate(self.labels[col])} for col in self.X.columns if
                       not pd.api.types.is_numeric_dtype(self.X[col])}
+        self.enums_inv={col:{idx:cat for idx,cat in enumerate(self.labels[col])} for col in self.X.columns if
+                        not pd.api.types.is_numeric_dtype(self.X[col])}
         return self
     
     def transform(self,T):
-        if self.X is None:
+        if not self.enums:
             raise ValueError("Cannot transform without no prior fitted data")
         t=self.X_checker(T).copy()
         for col in t.columns:
-            if col not in self.X.columns:
-                raise ValueError(f"Column {col} not in fitted data")
+            if col in self.enums.keys():
             
-            if t[col].dtype != self.X[col].dtype:
-                raise ValueError(f"dtype mismatch betwwen the fitted data and data to be transformed in {col}")
-            
-            if sorted(t[col].unique())!=self.labels[col]:
-                raise ValueError(f"Category label mismatch in {col}")
-            
-            if not pd.api.types.is_numeric_dtype(t[col]):
-                t[col]=t[col].map(self.enums[col])
+                if t[col].dtype != self.X[col].dtype:
+                    raise ValueError(f"dtype mismatch betwwen the fitted data and data to be transformed in {col}")
+                
+                if col in self.labels:
+                    unknown_cats = set(t[col].unique()) - set(self.labels[col])
+                    if unknown_cats:
+                        raise ValueError(f"Unknown categories in {col}: {unknown_cats}")
+                
+                if not pd.api.types.is_numeric_dtype(t[col]):
+                    t[col]=t[col].map(self.enums[col])
         return t
+    
+    def inverse_transform(self,T):
+        if not self.enums_inv:
+            raise ValueError("Cannot transform without no prior fitted data")
+        t=self.X_checker(T).copy()
+        for col in t.columns:
+            if col in self.enums_inv.keys():
+                if pd.api.types.is_numeric_dtype(t[col]) and not  pd.api.types.is_numeric_dtype(self.X[col]):
+                    unknown_codes = set(t[col].unique()) - set(self.enums_inv[col].keys())
+                    if unknown_codes:
+                        raise ValueError(f"Unknown encoded values in {col}: {unknown_codes}")
+                t[col]=t[col].map(self.enums_inv[col])
+        return t
+        
     
     def fit_transform(self,X):
         self.fit(X)
@@ -179,7 +197,7 @@ class LabelEncoder:
         return t
     
     def get_params(self):
-        if self.X is None:
+        if not self.enums:
             raise ValueError("Cannot give the params without fitting")
         dfs = []
         for col, mapping in self.enums.items():
@@ -194,6 +212,7 @@ class OrdinalEncoder:
     def __init__(self,unknown_map=None):
         self.X=None
         self.map={}
+        self.inv_map={}
         self.unknown_map=unknown_map
 
     @staticmethod
@@ -223,6 +242,7 @@ class OrdinalEncoder:
                 raise ValueError(f"The categories you entered for {key} don't exist in the data fit")
             
             self.map[key]={cat:idx for idx,cat in enumerate(list(value))}
+            self.inv_map[key]={idx:cat for idx,cat in enumerate(list(value))}
         
         return self
     
@@ -246,6 +266,21 @@ class OrdinalEncoder:
         
         return t
     
+    def inverse_transform(self,T):
+        t=self.X_checker(T).copy()
+        if not self.inv_map:
+            raise ValueError("Cannot transform without fitting data")
+        
+        for col in t.columns:
+            if col in self.inv_map.keys():
+                if pd.api.types.is_numeric_dtype(t[col]) and not  pd.api.types.is_numeric_dtype(self.X[col]):
+                    unknown_codes = set(t[col].unique()) - set(self.inv_map[col].keys())
+                    if unknown_codes:
+                        raise ValueError(f"Unknown encoded values in {col}: {unknown_codes}")
+                t[col]=t[col].map(self.inv_map[col])
+        
+        return t
+
     def fit_transform(self,X,order=None):
         self.fit(X,order=order)
         t=self.transform(X)
