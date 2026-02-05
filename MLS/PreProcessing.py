@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import warnings
-
 class StandardScaler:
 
     def __init__(self):
@@ -336,17 +334,17 @@ class OneHotEncoder:
                     self.encoded_cols.append(col)
         return self
     
-    @staticmethod
-    def encoder(self,t,cats,col):
+    def __encoder(self,t,cats,col):
         for cat in cats:
             if cat not in self.encoded[col]:
                 if self.handle_unknown=='halt':
                     raise ValueError(f"Unknown categories encountered {cat}")
-                elif self.handle_unkown=='bucket':
-                    t['unknown']=(t[col]==t[cat]).astype(int)
+                elif self.handle_unknown=='bucket':
+                    t['unknown']=(t[col]==cat).astype(int)
                 else:
                     t[f'{col}_{cat}']=(t[col]==cat).astype(int)
-            t[f'{col}_{cat}']=(t[col]==cat).astype(int)
+            else:
+                t[f'{col}_{cat}']=(t[col]==cat).astype(int)
         return t
     
     def transform(self,T):
@@ -358,7 +356,7 @@ class OneHotEncoder:
                 if t[col].dtype!=self.X[col].dtype:
                     raise ValueError(f"dtype mismatch between fit data and transform data in column {col}")
                 
-                t=self.encoder(t,list(t[col].unique()),col)
+                t=self.__encoder(t,list(t[col].unique()),col)
         return t
     
     def fit_transform(self,X,columns=None):
@@ -370,3 +368,69 @@ class OneHotEncoder:
         x=pd.DataFrame(self.encoded)
         encoded=pd.DataFrame(np.reshape(np.array(x),(1,-1)),index=self.encoded.keys())
         return (self.encoded_cols,encoded)
+
+class SimpleImputer:
+
+    def __init__(self,strat='mean',fixed_val=None):
+        self.X=None
+        if strat not in ['mean','median','mode','fixed']:
+            raise ValueError(f"strat has to be one of {['mean','median','mode','fixed']}")
+        self.strat=strat
+        if self.strat=='fixed':
+            if not isinstance(fixed_val,dict):
+                raise ValueError("fixed value has to be a dictionary in the form 'column':value")
+            self.fixed_val=fixed_val
+        self.fill_vals={}
+    
+    @staticmethod
+    def X_checker(X):
+        if X is None:
+            raise ValueError("Inputs can't be none")
+        
+        if not(isinstance(X,pd.DataFrame)):
+            raise ValueError("X has to be a DataFrame")
+
+        temp=pd.DataFrame(X,columns=X.columns)
+        return temp
+    
+    def fit(self,X):
+        self.X=self.X_checker(X)
+        for col in self.X.columns:
+            if self.X[col].isna().sum():
+                if pd.api.types.is_numeric_dtype(self.X[col]):
+                    if self.strat=='mean':
+                        self.fill_vals[col]=self.X[col].mean()
+                    elif self.strat=='median':
+                        self.fill_vals[col]=self.X[col].median()
+                    elif self.strat=='mode':
+                        self.fill_vals[col]=self.X[col].mode()[0]
+                    else:
+                        self.fill_vals[col]=self.fixed_val[col]
+                else: 
+                    if self.strat=='mode':
+                        self.fill_vals[col]=self.X[col].mode()[0]
+                    elif self.strat=='fixed':
+                        if col not in self.fixed_val:
+                            raise ValueError(f"Column '{col}' not in fixed_val")
+                        self.fill_vals[col]=self.fixed_val[col]
+        return self
+    
+    def transform(self,T):
+        t=self.X_checker(T)
+        for col in t.columns:
+            if col in list(self.X.columns):
+                if t[col].dtype!=self.X[col].dtype:
+                    raise ValueError(f"dtype mismatch between fit data and transform data in column {col}")
+                t[col]=t[col].fillna(self.fill_vals[col])
+        
+        return t
+    
+    def fit_transform(self,X):
+        self.fit(X)
+        t=self.transform(X)
+        return t
+    
+    def get_params(self):
+        params = pd.DataFrame([self.fill_vals]).T
+        params.columns = ['Fill Value'] 
+        return params
