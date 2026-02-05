@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import warnings
 
 class StandardScaler:
 
@@ -297,3 +298,75 @@ class OrdinalEncoder:
 
         df = pd.concat(dfs, ignore_index=True)
         return df
+
+class OneHotEncoder:
+    def __init__(self,handle_unknown='halt'):
+        self.X=None
+        if handle_unknown not in ['ignore','bucket','halt']:
+            raise ValueError(f"handle_unknown has to be either one of 'ignore' 'bucket' 'halt'")
+        self.handle_unknown=handle_unknown
+        self.encoded={}
+        self.columns=None
+        self.encoded_cols=[]
+    
+    @staticmethod
+    def X_checker(X):
+        if X is None:
+            raise ValueError("Inputs can't be none")
+        
+        if not(isinstance(X,pd.DataFrame)):
+            raise ValueError("X has to be a DataFrame")
+
+        temp=pd.DataFrame(X,columns=X.columns)
+        if temp.isna().sum().sum():
+            raise ValueError("There shouldn't be NaN values in X")
+        return temp
+    
+    def fit(self,X,columns=None):
+        self.X=self.X_checker(X).copy()
+        self.columns=columns
+        for col in self.X.columns:
+            if self.columns is not None:
+                if col in self.columns and not pd.api.types.is_numeric_dtype(self.X[col]):
+                    self.encoded[col]=list(self.X[col].unique())
+                    self.encoded_cols.append(col)
+            else:
+                if not pd.api.types.is_numeric_dtype(self.X[col]):
+                    self.encoded[col]=list(self.X[col].unique())
+                    self.encoded_cols.append(col)
+        return self
+    
+    @staticmethod
+    def encoder(self,t,cats,col):
+        for cat in cats:
+            if cat not in self.encoded[col]:
+                if self.handle_unknown=='halt':
+                    raise ValueError(f"Unknown categories encountered {cat}")
+                elif self.handle_unkown=='bucket':
+                    t['unknown']=(t[col]==t[cat]).astype(int)
+                else:
+                    t[f'{col}_{cat}']=(t[col]==cat).astype(int)
+            t[f'{col}_{cat}']=(t[col]==cat).astype(int)
+        return t
+    
+    def transform(self,T):
+        if not self.encoded:
+            raise ValueError("Cannot transform with no fit data")
+        t=self.X_checker(T).copy()
+        for col in t.columns:
+            if col in self.encoded_cols:
+                if t[col].dtype!=self.X[col].dtype:
+                    raise ValueError(f"dtype mismatch between fit data and transform data in column {col}")
+                
+                t=self.encoder(t,list(t[col].unique()),col)
+        return t
+    
+    def fit_transform(self,X,columns=None):
+        self.fit(X,columns=columns)
+        t=self.transform(X)
+        return t
+    
+    def get_params(self):
+        x=pd.DataFrame(self.encoded)
+        encoded=pd.DataFrame(np.reshape(np.array(x),(1,-1)),index=self.encoded.keys())
+        return (self.encoded_cols,encoded)
