@@ -60,9 +60,9 @@ pip install numpy pandas
 ### **1. Classification with Gaussian Naive Bayes**
 ```python
 import pandas as pd
-from MLS.Gaussian import GaussianClassifier
-from MLS.ModelSelection import split
-from MLS.Metrics import accuracy_score, confusion_matrix
+from mls.Gaussian import GaussianClassifier
+from mls.ModelSelection import split
+from mls.Metrics import accuracy_score, confusion_matrix
 
 # Load data
 df = pd.read_csv('data.csv')
@@ -86,8 +86,8 @@ print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
 
 ### **2. Regression with Linear Regression**
 ```python
-from MLS.LinearModels import LinearRegressor
-from MLS.Metrics import rmse
+from mls.LinearModels import LinearRegressor
+from mls.Metrics import rmse
 
 # Train model
 model = LinearRegressor()
@@ -102,7 +102,7 @@ print(f"RMSE: {rmse(y_test, y_pred)}")
 
 ### **3. Preprocessing Pipeline**
 ```python
-from MLS.PreProcessing import StandardScaler, LabelEncoder, SimpleImputer
+from mls.PreProcessing import StandardScaler, LabelEncoder, SimpleImputer
 import numpy as np
 
 # Handle missing values
@@ -124,7 +124,7 @@ y_test_encoded = encoder.transform(y_test)
 
 ### **4. Ordinal Encoding with Custom Order**
 ```python
-from MLS.PreProcessing import OrdinalEncoder
+from mls.PreProcessing import OrdinalEncoder
 
 # Define ordering for categorical features
 order = {
@@ -141,7 +141,7 @@ print(encoder.get_params())
 
 ### **5. K-Nearest Neighbors Classification**
 ```python
-from MLS.KNeighbours import KnnClassifier
+from mls.KNeighbours import KnnClassifier
 
 # Train model
 model = KnnClassifier(k=5)
