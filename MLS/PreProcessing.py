@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import warnings
 class StandardScaler:
 
     def __init__(self):
@@ -394,7 +395,7 @@ class SimpleImputer:
         return temp
     
     def fit(self,X):
-        self.X=self.X_checker(X)
+        self.X=self.X_checker(X).copy()
         for col in self.X.columns:
             if self.X[col].isna().sum():
                 if pd.api.types.is_numeric_dtype(self.X[col]):
@@ -413,10 +414,13 @@ class SimpleImputer:
                         if col not in self.fixed_val:
                             raise ValueError(f"Column '{col}' not in fixed_val")
                         self.fill_vals[col]=self.fixed_val[col]
+                    else:
+                        warnings.warn(f"Strategy '{self.strat}' not valid for categorical column '{col}' Skipping this column.",
+                                    UserWarning)
         return self
     
     def transform(self,T):
-        t=self.X_checker(T)
+        t=self.X_checker(T).copy()
         for col in t.columns:
             if col in list(self.X.columns):
                 if t[col].dtype!=self.X[col].dtype:
