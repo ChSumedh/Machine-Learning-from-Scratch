@@ -2,61 +2,65 @@ import numpy as np
 import pandas as pd
 
 #Verifying the format of Training Feature Inputs and Target Inputs
-def Xy_checker(X,y):
+def _Xy_checker(X,y):
     if X is None or y is None:
         raise ValueError("Inputs can't be none")
     if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
         raise ValueError("X has to be a numpy array or DataFrame")
     if not(isinstance(y,pd.DataFrame) or isinstance(y,np.ndarray)):
         raise ValueError("y has to be a numpy array or DataFrame")
-    X=np.array(X)
-    y=np.array(y)
+    X_temp=np.array(X)
+    y_temp=np.array(y)
 
-    if X.ndim!=2:
+    if X_temp.ndim!=2:
         raise ValueError("X has to be 2 dimensional")
-    if y.ndim!=1:
+    if y_temp.ndim!=1:
         raise ValueError("y has to be 1 dimensional")
 
-    if not np.issubdtype(X.dtype, np.number):
+    if not np.issubdtype(X_temp.dtype, np.number):
         raise TypeError("X must contain numbers")
-    if not np.issubdtype(y.dtype, np.number):
+    if not np.issubdtype(y_temp.dtype, np.number):
         raise TypeError("y must contain numbers")
-    if np.isnan(X).any():
+    if np.isnan(X_temp).any():
         raise ValueError("There shouldn't be NaN values in X")
-    if np.isnan(y).any():
+    if np.isnan(y_temp).any():
         raise ValueError("There shouldn't be NaN values in y")
-    if X.shape[0]!=y.shape[0]:
-        raise ValueError(f"X shape is {X.shape}, y shape is {y.shape}")
-    return X,y
+    if X_temp.shape[0]!=y_temp.shape[0]:
+        raise ValueError(f"X shape is {X_temp.shape}, y shape is {y_temp.shape}")
+    return X_temp,y_temp
 
 #Verifying the format of Test Feature Inputs
-def X_t_checker(X_t,X):
+def _X_t_checker(X_t,X):
     if X_t is None:
         raise ValueError("Inputs can't be none")
     if not(isinstance(X_t,pd.DataFrame) or isinstance(X_t,np.ndarray)):
         raise ValueError("X_t has to be a numpy array or DataFrame")
-    X_t=np.array(X_t)
-    if not(X_t.ndim==2 or X_t.ndim==1):
+    X_t_temp=np.array(X_t)
+    if not(X_t_temp.ndim==2 or X_t_temp.ndim==1):
         raise ValueError("X_t has to be 1 or 2 dimensional")
-    if not np.issubdtype(X_t.dtype, np.number):
+    if not np.issubdtype(X_t_temp.dtype, np.number):
         raise TypeError("X_t must contain numbers")
-    if np.isnan(X_t).any():
+    if np.isnan(X_t_temp).any():
         raise ValueError("There shouldn't be NaN values in X_t")
-    if X_t.ndim == 1:
+    if X_t_temp.ndim == 1:
         X_t = X_t.reshape(1, -1)
 
-    if X_t.shape[1] != X.shape[1]:
+    if X_t_temp.shape[1] != X.shape[1]:
         raise ValueError("X and X_t must have the same number of features")
 
-    return X_t
+    return X_t_temp
 
 class LinearRegressor:
+    def __init__(self):
+        self.X=None
+        self.y=None
+        self.thetas=None
+        self.X_=None
+    
     def fit(self,X,y):
-        X,y=Xy_checker(X,y)
-        self.X=X
-        self.y=y
-        ones=np.ones((X.shape[0],1))
-        X_=np.concatenate((ones,X),axis=1)
+        self.X,self.y=_Xy_checker(X,y)
+        ones=np.ones((self.X.shape[0],1))
+        X_=np.concatenate((ones,self.X),axis=1)
         self.X_=X_
         thetas=np.matmul(np.linalg.pinv(np.matmul(np.transpose(self.X_),self.X_)),
                             np.matmul(np.transpose(self.X_),self.y))
@@ -64,10 +68,10 @@ class LinearRegressor:
 
     
     def predict(self,X_t):
-        X_t=X_t_checker(X_t,self.X)
-        ones=np.ones((X_t.shape[0],1))
-        X_t=np.concatenate((ones,X_t),axis=1)
-        result = np.matmul(X_t,self.thetas)
+        X_tn=_X_t_checker(X_t,self.X)
+        ones=np.ones((X_tn.shape[0],1))
+        X_tn=np.concatenate((ones,X_tn),axis=1)
+        result = np.matmul(X_tn,self.thetas)
         return result
                 
 class SGD_LinearRegressor:
@@ -75,14 +79,16 @@ class SGD_LinearRegressor:
         self.batch_size=batch_size if batch_size!=None else 32
         self.alpha=alpha
         self.epochs=epochs
+        self.X=None
+        self.y=None
+        self.X_=None
+        self.thetas=None
     def fit(self,X,y):
-        X,y=Xy_checker(X,y)
-        self.X=X
-        self.y=y
-        ones=np.ones((X.shape[0],1))
+        self.X,self.y=_Xy_checker(X,y)
+        ones=np.ones((self.X.shape[0],1))
         X_=np.concatenate((ones,X),axis=1)
         self.X_=X_
-        self.thetas = np.random.random((X.shape[1]+1,))
+        self.thetas = np.random.random((self.X.shape[1]+1,))
         max_iter=100_000 if self.epochs==None else self.epochs
         tol=1e-3
 
@@ -111,35 +117,39 @@ class SGD_LinearRegressor:
                 break
     
     def predict(self,X_t):
-        X_t=X_t_checker(X_t,self.X)
-        ones = np.reshape(np.ones(X_t.shape[0]),(-1,1))
-        X_t=np.concatenate((ones,X_t),axis=1)
-        return np.matmul(X_t,self.thetas)
+        if self.thetas is None:
+            raise ValueError("Cannot predict without fit data")
+        X_tn=_X_t_checker(X_t,self.X)
+        ones = np.reshape(np.ones(X_tn.shape[0]),(-1,1))
+        X_tn=np.concatenate((ones,X_tn),axis=1)
+        return np.matmul(X_tn,self.thetas)
 
 class LogisticRegression:
     def __init__(self,alpha=0.1,batch_size=32,epochs=None):
         self.alpha=alpha
         self.batch_size=batch_size
         self.epochs=epochs
+        self.X=None
+        self.y=None
+        self.values=None
+        self.X_=None
+        self.thetas=None
     
     def sigmoid(self,values):
         return 1 / (1 + np.exp(-values))
     
     def fit(self,X,y):
-        X,y=Xy_checker(X,y)
-        self.X=X
-        self.y=y
-        values,counts=np.unique(y)
+        self.X,self.y=_Xy_checker(X,y)
+        values,counts=np.unique(self.y)
         if len(values)!=2:
             raise ValueError("Only Binary Classification allowed")
-        y=(y==values[1]).astype(int)
-        self.y=y
+        self.y=(self.y==values[1]).astype(int)
         self.values=values
         
-        ones=np.ones((X.shape[0],1))
-        X_=np.concatenate((ones,X),axis=1)
+        ones=np.ones((self.X.shape[0],1))
+        X_=np.concatenate((ones,self.X),axis=1)
         self.X_=X_
-        self.thetas = np.random.random((X.shape[1]+1,))
+        self.thetas = np.random.random((self.X.shape[1]+1,))
         max_iter=100_000 if self.epochs==None else self.epochs
         tol=1e-3
 
@@ -147,7 +157,7 @@ class LogisticRegression:
             grad=np.zeros(self.X.shape[1]+1)
             k=0
 
-            idx = np.random.permutation(len(X))
+            idx = np.random.permutation(len(self.X))
             self.X_=self.X_[idx]
             self.y=self.y[idx]
             z=np.matmul(self.X_,self.thetas)
@@ -174,10 +184,10 @@ class LogisticRegression:
     
     
     def predict_proba(self,X_t):
-        X_t_checker(X_t,self.X)
-        ones = np.reshape(np.ones(X_t.shape[0]),(-1,1))
-        X_t=np.concatenate((ones,X_t),axis=1)
-        return self.sigmoid(np.matmul(X_t,self.thetas))
+        X_tn=_X_t_checker(X_t,self.X)
+        ones = np.reshape(np.ones(X_tn.shape[0]),(-1,1))
+        X_tn=np.concatenate((ones,X_tn),axis=1)
+        return self.sigmoid(np.matmul(X_tn,self.thetas))
     
     def predict(self,X_t,threshold=0.5):
         ans=self.predict_proba(X_t)

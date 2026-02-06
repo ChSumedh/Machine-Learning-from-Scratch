@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-def Y_checker(y,y_t):
+def _Y_checker(y,y_t):
     if y_t is None or y is None:
         raise ValueError("Inputs can't be none")
     if not(isinstance(y_t ,np.ndarray)):
@@ -15,7 +15,7 @@ def Y_checker(y,y_t):
         raise ValueError("There shouldn't be NaN values in y")
 
 def confusion_matrix(y,y_t):
-    Y_checker(y,y_t)
+    _Y_checker(y,y_t)
     unique_y = np.unique(y)
     unique_y_t = np.unique(y_t)
     classes = np.unique(np.concatenate([unique_y, unique_y_t]))
@@ -57,7 +57,7 @@ def accuracy_score(y,y_t):
 
     
 def rmse(y,y_t):
-    Y_checker(y,y_t)
-    if not (np.issubdtype(y.dtype,np.number) and np.issubdtype(y_t.dtype,np.number)):
+    _Y_checker(y,y_t)
+    if not (np.issubdtype(y.dtype,np.number) or not np.issubdtype(y_t.dtype,np.number)):
         raise ValueError("The inputs have to be numbers")
     return np.sqrt(np.mean(np.square(y-y_t)))
