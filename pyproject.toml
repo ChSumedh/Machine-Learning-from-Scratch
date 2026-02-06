@@ -1,0 +1,11 @@
+[project]
+name = "mls"
+version = "0.1.0"
+description = "A simple sklearn-like ML library"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
