@@ -10,5 +10,5 @@ dependencies = ["numpy"]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tools.setuptools]
+[tool.setuptools]
 packages=['mls']
