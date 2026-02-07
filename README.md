@@ -46,7 +46,7 @@ A comprehensive machine learning library built from scratch in Python, implement
 ## 📦 Installation
 ```bash
 # Install the Package
-pip install git+https://github.com/ChSumedh/Machine-Learning-From-Scratch/mls.git
+pip install git+https://github.com/ChSumedh/Machine-Learning-From-Scratch.git
 
 # Install dependencies
 pip install numpy pandas
