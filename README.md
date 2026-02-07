@@ -45,9 +45,8 @@ A comprehensive machine learning library built from scratch in Python, implement
 
 ## 📦 Installation
 ```bash
-# Clone the repository
-git clone https://github.com/ChSumedh/MLS.git
-cd MLS
+# Install the Package
+pip install git+https://github.com/ChSumedh/Machine-Learning-From-Scratch/mls.git
 
 # Install dependencies
 pip install numpy pandas
@@ -57,7 +56,7 @@ pip install numpy pandas
 
 ## 🔧 Usage Examples
 
-### **1. Classification with Gaussian Naive Bayes**
+### **1. Classification with Gaussian Classifier**
 ```python
 import pandas as pd
 from mls.Gaussian import GaussianClassifier
@@ -84,7 +83,34 @@ print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
 ```
 
-### **2. Regression with Linear Regression**
+### **2. Classification with Naive Bayes Classifier**
+```python
+import pandas as pd
+from mls.Gaussian import NaiveBayesClassifier
+from mls.ModelSelection import split
+from mls.Metrics import accuracy_score, confusion_matrix
+
+# Load data
+df = pd.read_csv('data.csv')
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Split data
+X_train, X_test, y_train, y_test = split(X, y, split_size=0.2, stratify_y=True)
+
+# Train model
+model = NaiveBayesClassifier()
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Evaluate
+print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
+```
+
+### **3. Regression with Linear Regression**
 ```python
 from mls.LinearModels import LinearRegressor
 from mls.Metrics import rmse
@@ -100,9 +126,75 @@ y_pred = model.predict(X_test)
 print(f"RMSE: {rmse(y_test, y_pred)}")
 ```
 
-### **3. Preprocessing Pipeline**
+### **4. Regression with Stochastic Gradient Descent Regression**
 ```python
-from mls.PreProcessing import StandardScaler, LabelEncoder, SimpleImputer
+from mls.LinearModels import SGD_LinearRegressor
+from mls.Metrics import rmse
+
+# Train model
+# SGD_LinearRegressor(alpha={Learning Rate, 0.1 by default},epochs={no.of epochs,100_000 by default,batch_size={batch size of regressor, 32 by default})
+model = SGD_LinearRegressor()
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Evaluate
+print(f"RMSE: {rmse(y_test, y_pred)}")
+```
+
+### **5. Regression with Logistic Regression**
+```python
+from mls.LinearModels import LogisticRegression
+from mls.Metrics import rmse
+
+# Train model
+#LogisticRegression(alpha={Learning Rate, 0.1 by default},epochs={no.of epochs,100_000 by default,batch_size={batch size of regressor, 32 by default},sigmoid_const={multiplied to linear equations output before normalizing it through sigmoid,1 by default})
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Evaluate
+print(f"RMSE: {rmse(y_test, y_pred)}")
+```
+
+### **6. K-Nearest Neighbors Classification**
+```python
+from mls.KNeighbours import KnnClassifier
+
+# Train model
+model = KnnClassifier(k=5)# k= no of nearest neighbours considered during classification
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Evaluate
+from mls.Metrics import classification_report
+print(classification_report(y_test, y_pred))
+```
+
+### **7. K-Nearest Neighbors Regressor**
+```python
+from mls.KNeighbours import KnnRegressor
+
+# Train model
+model = KnnRegressorr(k=5)# k= no of nearest neighbours considered during Regression
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Evaluate
+from mls.Metrics import rmse
+print(rmse(y_test, y_pred))
+```
+
+### **8. Preprocessing Pipeline**
+```python
+from mls.PreProcessing import StandardScaler,MinMaxScaler, LabelEncoder ,OneHotEncoder, SimpleImputer
 import numpy as np
 
 # Handle missing values
@@ -112,17 +204,23 @@ X_imputed = imputer.fit_transform(X_train)
 # Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_imputed)
+###0r
+#####scaler = MinMaxScaler()
+#####X_scaled = scaler.fit_transform(X_imputed)
 
 # Encode categorical targets
 encoder = LabelEncoder()
 y_encoded = encoder.fit_transform(y_train)
+###Or
+#####encoder = OneHotEncoder()
+#####y_encoded = encoder.fit_transform(y_train)
 
 # Transform test data
 X_test_processed = scaler.transform(imputer.transform(X_test))
 y_test_encoded = encoder.transform(y_test)
 ```
 
-### **4. Ordinal Encoding with Custom Order**
+### **9. Ordinal Encoding with Custom Order**
 ```python
 from mls.PreProcessing import OrdinalEncoder
 
@@ -139,25 +237,20 @@ X_encoded = encoder.fit_transform(X, order=order)
 print(encoder.get_params())
 ```
 
-### **5. K-Nearest Neighbors Classification**
-```python
-from mls.KNeighbours import KnnClassifier
-
-# Train model
-model = KnnClassifier(k=5)
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-from MLS.Metrics import classification_report
-print(classification_report(y_test, y_pred))
-```
-
 ---
 
 ## 📊 API Reference
+
+### **Models**
+```python
+ModelName()
+```
+Standardizes features by removing mean and scaling to unit variance.
+
+**Methods:**
+- `fit(X)` - Trains the model based on the given data
+- `predict_proba(Test Data)` - Predicts probablity of each sample being belonging to every possible class.(Only works for classifiers other than KnnClassifier) 
+- `predict(Test_Data)` - Predicts the class or value of each test sample
 
 ### **StandardScaler**
 ```python
@@ -239,20 +332,9 @@ Split data into training and testing sets.
 
 ---
 
-## 📝 Design Principles
-
-1. **Sklearn-compatible API**: All estimators follow `.fit()`, `.transform()`, `.predict()` patterns
-2. **Input validation**: Comprehensive error checking and informative error messages
-3. **Method chaining**: Transformers return `self` from `.fit()` for chaining
-4. **Pandas-friendly**: Works seamlessly with DataFrames and Series
-
-## 🙏 Acknowledgments
-
-Built as a learning project to understand machine learning algorithms from first principles. Inspired by scikit-learn's API design.
-
 ## 🔍 Project Structure
 ```
-MLS/
+mls/
 ├── Gaussian.py
 ├── KNeighbours.py
 ├── LinearModels.py
