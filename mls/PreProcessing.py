@@ -89,7 +89,7 @@ class MinMaxScaler:
         self.X=self.X_checker(X)
         self.cols=list(self.X.columns)
         self.X_=self.X.select_dtypes(include=np.number)
-        self.means={col:self.X_[col].mean() for col in self.X_.columns}
+        self.means={col:self.X_[col].min() for col in self.X_.columns}
         self.range={col:self.X_[col].max()-self.X_[col].min() for col in self.X_.columns}
         return self
     
