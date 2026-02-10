@@ -7,12 +7,12 @@ def _Xy_checker(X,y):
     if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
         raise ValueError("X has to be a numpy array or DataFrame")
     if not(isinstance(y,pd.Series) or isinstance(y,np.ndarray)):
-        raise ValueError("y has to be a numpy array or DataFrame")
+        raise ValueError("y has to be a numpy array or Series")
     X_temp=pd.DataFrame(X)
     y_temp=pd.Series(y)
     if X_temp.ndim!=2:
         raise ValueError("X has to be 2 dimensional")
-    if y_temp.shape[1]!=1:
+    if y_temp.ndim!=1:
         raise ValueError("y has to have only one column")
     if X_temp.isna().any().any():
         raise ValueError("There shouldn't be NaN values in X")
@@ -72,8 +72,8 @@ class NaiveBayesClassifier:
         self.X,self.y=_Xy_checker(X,y)
         numerical={}
         categorical={}
-        classes=list(self.y[self.y.columns[0]].unique())
-        class_indices={clas:(self.y[self.y.iloc[:,0]==clas]).index for clas in classes }
+        classes=list(self.y.unique())
+        class_indices={clas:self.y.loc[(self.y==clas)].index for clas in classes }
 
         #Caluculating Prior Probablities
         prior_proba = self.y.iloc[:, 0].value_counts(normalize=True).to_dict()
@@ -160,9 +160,9 @@ class GaussianClassifier:
         if not self.y.select_dtypes(include=[np.number]).shape[1] == self.y.shape[1]:
             raise TypeError("y must contain numbers")
         means={}
-        classes=list(self.y[self.y.columns[0]].unique())
+        classes=list(self.y.unique())
         self.classes=classes
-        class_indices={clas:(self.y[self.y.iloc[:,0]==clas]).index for clas in classes }
+        class_indices={clas:(self.y.loc[self.y==clas]).index for clas in classes }
         for clas,index in class_indices.items():
             curr=self.X.iloc[index]
             means[clas]=list(curr.mean())

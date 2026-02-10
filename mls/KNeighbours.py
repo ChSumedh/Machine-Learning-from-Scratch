@@ -7,7 +7,7 @@ def _Xy_checker(X,y):
     if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
         raise ValueError("X has to be a numpy array or DataFrame")
     if not(isinstance(y,pd.Series) or isinstance(y,np.ndarray)):
-        raise ValueError("y has to be a numpy array or DataFrame")
+        raise ValueError("y has to be a numpy array or Series")
     if X.ndim!=2:
         raise ValueError("X has to be 2 dimensional")
     if y.ndim!=1:
