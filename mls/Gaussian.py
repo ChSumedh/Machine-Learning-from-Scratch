@@ -75,8 +75,7 @@ class NaiveBayesClassifier:
         classes=list(self.y.unique())
         class_indices={clas:self.y.loc[(self.y==clas)].index for clas in classes }
 
-        #Caluculating Prior Probablities
-        prior_proba = self.y.iloc[:, 0].value_counts(normalize=True).to_dict()
+        prior_proba = self.y.value_counts(normalize=True).to_dict()
         
         for clas,index in class_indices.items():
             curr = self.X.iloc[index]
@@ -166,6 +165,7 @@ class GaussianClassifier:
         for clas,index in class_indices.items():
             curr=self.X.iloc[index]
             means[clas]=list(curr.mean())
+        prior_proba = self.y.value_counts(normalize=True).to_dict()
         sigmas={}
         for clas in classes:
             class_data = self.X.iloc[class_indices[clas]]
@@ -174,6 +174,7 @@ class GaussianClassifier:
             sigmas[clas] = (centered.T @ centered) / len(class_data)
         self.sigmas=sigmas
         self.means=means
+        self.prior_proba=prior_proba
     
     def predict_proba(self,X_t):
         if self.sigma is None:
@@ -184,7 +185,7 @@ class GaussianClassifier:
             proba=[]
             for clas in self.classes:
                 proba.append(self.normal_likelihood(X_tn.iloc[i],self.means[clas],self.sigmas[clas]))
-            probas.append(proba)
+            probas.append(proba*self.prior_proba[clas])
         probas=pd.DataFrame(probas,columns=self.classes)
         return probas
     
