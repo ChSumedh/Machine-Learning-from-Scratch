@@ -6,17 +6,17 @@ def _Xy_checker(X,y):
         raise ValueError("Inputs can't be none")
     if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
         raise ValueError("X has to be a numpy array or DataFrame")
-    if not(isinstance(y,pd.DataFrame) or isinstance(y,np.ndarray)):
+    if not(isinstance(y,pd.Series) or isinstance(y,np.ndarray)):
         raise ValueError("y has to be a numpy array or DataFrame")
     X_temp=pd.DataFrame(X)
-    y_temp=pd.DataFrame(y)
+    y_temp=pd.Series(y)
     if X_temp.ndim!=2:
         raise ValueError("X has to be 2 dimensional")
     if y_temp.shape[1]!=1:
         raise ValueError("y has to have only one column")
     if X_temp.isna().any().any():
         raise ValueError("There shouldn't be NaN values in X")
-    if y_temp.isna().any().any():
+    if y_temp.isna().any():
         raise ValueError("There shouldn't be NaN values in y")
     if X_temp.shape[0]!=y_temp.shape[0]:
         raise ValueError(f"X shape is {X_temp.shape}, y shape is {y_temp.shape}")

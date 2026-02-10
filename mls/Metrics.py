@@ -33,7 +33,7 @@ def classification_report(y,y_t):
     classes = np.unique(np.concatenate([unique_y, unique_y_t]))
     classes=list(classes)
     cm=confusion_matrix(y,y_t)
-    cr=np.zeros((len(classes),2))
+    cr=np.zeros((len(classes),3))
     for i in range(len(classes)):
         cr[i][0]=cm.loc[classes[i],classes[i]]/np.sum(cm[cm.columns[i]])
         cr[i][1]=cm.loc[classes[i],classes[i]]/np.sum(cm.loc[classes[i],:])

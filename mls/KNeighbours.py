@@ -6,7 +6,7 @@ def _Xy_checker(X,y):
         raise ValueError("Inputs can't be none")
     if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
         raise ValueError("X has to be a numpy array or DataFrame")
-    if not(isinstance(y,pd.DataFrame) or isinstance(y,np.ndarray)):
+    if not(isinstance(y,pd.Series) or isinstance(y,np.ndarray)):
         raise ValueError("y has to be a numpy array or DataFrame")
     if X.ndim!=2:
         raise ValueError("X has to be 2 dimensional")
