@@ -156,7 +156,7 @@ class GaussianClassifier:
         self.X,self.y=_Xy_checker(X,y)
         if not self.X.select_dtypes(include=[np.number]).shape[1] == self.X.shape[1]:
             raise TypeError("X must contain numbers")
-        if not self.y.select_dtypes(include=[np.number]).shape[1] == self.y.shape[1]:
+        if not self.y.dtype==np.number:
             raise TypeError("y must contain numbers")
         means={}
         classes=list(self.y.unique())
