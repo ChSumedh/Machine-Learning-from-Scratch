@@ -156,7 +156,7 @@ class GaussianClassifier:
         self.X,self.y=_Xy_checker(X,y)
         if not self.X.select_dtypes(include=[np.number]).shape[1] == self.X.shape[1]:
             raise TypeError("X must contain numbers")
-        if not self.y.dtype==np.number:
+        if not pd.api.types.is_numeric_dtype(self.y):
             raise TypeError("y must contain numbers")
         means={}
         classes=list(self.y.unique())
@@ -177,7 +177,7 @@ class GaussianClassifier:
         self.prior_proba=prior_proba
     
     def predict_proba(self,X_t):
-        if self.sigma is None:
+        if self.sigmas is None:
             raise ValueError("Cannot predict without training data")
         X_tn=_X_t_checker(X_t,self.X)
         probas=[]
