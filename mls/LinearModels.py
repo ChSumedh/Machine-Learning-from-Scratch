@@ -140,7 +140,7 @@ class LogisticRegression:
     
     def fit(self,X,y):
         self.X,self.y=_Xy_checker(X,y)
-        values,counts=np.unique(self.y)
+        values,counts=np.unique(self.y,return_counts=True)
         if len(values)!=2:
             raise ValueError("Only Binary Classification allowed")
         self.y=(self.y==values[1]).astype(int)
