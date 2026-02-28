@@ -185,7 +185,7 @@ class GaussianClassifier:
             proba=[]
             for clas in self.classes:
                 proba.append(self.normal_likelihood(X_tn.iloc[i],self.means[clas],self.sigmas[clas]))
-            probas.append(proba*self.prior_proba[clas])
+            probas.append(list(proba*np.array(self.prior_proba[clas])))
         probas=pd.DataFrame(probas,columns=self.classes)
         return probas
     
