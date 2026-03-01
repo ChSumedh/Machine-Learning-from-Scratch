@@ -191,6 +191,10 @@ class LogisticRegression:
     
     def predict(self,X_t,threshold=0.5):
         ans=self.predict_proba(X_t)
-        ans= self.values[1] if ans>=threshold else self.values[0]
+        for i in range(len(ans)):
+            if(ans[i]>=threshold):
+                ans[i]=self.values[1]
+            else:
+                ans[i]=self.values[0]
         return ans
     
