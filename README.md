@@ -1,6 +1,45 @@
 # MLS - Machine Learning from Scratch
 
-A comprehensive machine learning library built from scratch in Python, implementing core ML algorithms and preprocessing tools without relying on scikit-learn.
+## 🚀 Overview
+
+MLS is a custom-built, pip-installable machine learning library developed from scratch using NumPy and Pandas, designed to replicate core functionalities of scikit-learn while providing full transparency into model internals.
+
+### 🔑 Key Highlights
+- Implemented 8+ ML algorithms from scratch (classification & regression)
+- Built modular preprocessing pipeline (scaling, encoding, imputation, splitting)
+- Designed sklearn-like API (`fit`, `predict`, `transform`)
+- Packaged as an installable Python library via `pip install git+...`
+- **Validated against scikit-learn implementations** to ensure correctness and consistency
+
+### 📊 Validation Against Scikit-learn
+Custom implementations were benchmarked against scikit-learn equivalents across multiple datasets:
+- Comparable accuracy and RMSE metrics
+- Similar decision boundaries and prediction behavior
+- Consistent preprocessing transformations
+
+(See comparison visuals below)
+<img width="745" height="546" alt="Screenshot From 2026-04-11 16-16-32" src="https://github.com/user-attachments/assets/c2615f7c-3f84-4f80-9dcc-db52d040b1c1" />
+
+<img width="738" height="546" alt="Screenshot From 2026-04-11 16-16-46" src="https://github.com/user-attachments/assets/99b8b132-19f4-4fe4-a722-e5949df52c88" />
+
+<img width="738" height="543" alt="Screenshot From 2026-04-11 16-16-58" src="https://github.com/user-attachments/assets/000ce54b-4d15-4518-b2e0-e454a00dd7af" />
+
+<img width="713" height="543" alt="Screenshot From 2026-04-11 16-17-12" src="https://github.com/user-attachments/assets/df0d04cc-c214-4199-b399-804286e37341" />
+
+<img width="732" height="543" alt="Screenshot From 2026-04-11 16-17-29" src="https://github.com/user-attachments/assets/773923dd-268a-4ca6-ae8f-b18f66c4382e" />
+
+<img width="732" height="543" alt="Screenshot From 2026-04-11 16-17-57" src="https://github.com/user-attachments/assets/ebeb9bdc-15f2-46be-8a8e-3afc86880850" />
+
+<img width="728" height="543" alt="Screenshot From 2026-04-11 16-18-20" src="https://github.com/user-attachments/assets/21a51b50-ae53-49a1-948c-09f55aa885f8" />
+
+<img width="728" height="543" alt="Screenshot From 2026-04-11 16-18-27" src="https://github.com/user-attachments/assets/7e2378f6-1ef8-4473-b1d1-1da35474d9b9" />
+
+<img width="728" height="543" alt="Screenshot From 2026-04-11 16-18-35" src="https://github.com/user-attachments/assets/eadbe36b-5396-4e08-8e13-f6eaa130b624" />
+
+<img width="740" height="543" alt="Screenshot From 2026-04-11 16-18-57" src="https://github.com/user-attachments/assets/26d3d033-
+cc90-4558-9a33-0136813a5875" />
+
+<img width="740" height="543" alt="Screenshot From 2026-04-11 16-19-04" src="https://github.com/user-attachments/assets/afa464b2-284f-45ea-bb17-f4c7f9e0ff73" />
 
 ## 🚀 Features
 
@@ -54,142 +93,34 @@ pip install numpy pandas
 
 ---
 
+## 🧭 Module Guide
+
+- `Gaussian.py` → Gaussian Classifier, Naive Bayes Classifier  
+- `LinearModels.py` → Linear Regression, Logistic Regression, SGD Regressor  
+- `KNeighbours.py` → KNN Classifier, KNN Regressor  
+- `PreProcessing.py` → Scalers, Encoders, Imputers  
+- `Metrics.py` → Evaluation metrics (Accuracy, RMSE, etc.)  
+- `ModelSelection.py` → Train-test split utilities  
+
 ## 🔧 Usage Examples
 
-### **1. Classification with Gaussian Classifier**
-```python
-import pandas as pd
-from mls.Gaussian import GaussianClassifier
-from mls.ModelSelection import split
-from mls.Metrics import accuracy_score, confusion_matrix
+### Logistic Regression Example
 
-# Load data
-df = pd.read_csv('data.csv')
-X = df.drop('target', axis=1)
-y = df['target']
-
-# Split data
-X_train, X_test, y_train, y_test = split(X, y, split_size=0.2, stratify_y=True)
-
-# Train model
-model = GaussianClassifier()
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
-```
-
-### **2. Classification with Naive Bayes Classifier**
-```python
-import pandas as pd
-from mls.Gaussian import NaiveBayesClassifier
-from mls.ModelSelection import split
-from mls.Metrics import accuracy_score, confusion_matrix
-
-# Load data
-df = pd.read_csv('data.csv')
-X = df.drop('target', axis=1)
-y = df['target']
-
-# Split data
-X_train, X_test, y_train, y_test = split(X, y, split_size=0.2, stratify_y=True)
-
-# Train model
-model = NaiveBayesClassifier()
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
-```
-
-### **3. Regression with Linear Regression**
-```python
-from mls.LinearModels import LinearRegressor
-from mls.Metrics import rmse
-
-# Train model
-model = LinearRegressor()
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-print(f"RMSE: {rmse(y_test, y_pred)}")
-```
-
-### **4. Regression with Stochastic Gradient Descent Regression**
-```python
-from mls.LinearModels import SGD_LinearRegressor
-from mls.Metrics import rmse
-
-# Train model
-# SGD_LinearRegressor(alpha={Learning Rate, 0.1 by default},epochs={no.of epochs,100_000 by default,batch_size={batch size of regressor, 32 by default})
-model = SGD_LinearRegressor()
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-print(f"RMSE: {rmse(y_test, y_pred)}")
-```
-
-### **5. Regression with Logistic Regression**
 ```python
 from mls.LinearModels import LogisticRegression
-from mls.Metrics import rmse
+
+# Sample training data
+X = [[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]]
+y = [0, 0, 1]
 
 # Train model
-#LogisticRegression(alpha={Learning Rate, 0.1 by default},epochs={no.of epochs,100_000 by default,batch_size={batch size of regressor, 32 by default},sigmoid_const={multiplied to linear equations output before normalizing it through sigmoid,1 by default})
 model = LogisticRegression()
-model.fit(X_train, y_train)
+model.fit(X, y)
 
 # Predict
-y_pred = model.predict(X_test)
+prediction = model.predict([[2.5, 3.5]])
 
-# Evaluate
-print(f"RMSE: {rmse(y_test, y_pred)}")
-```
-
-### **6. K-Nearest Neighbors Classification**
-```python
-from mls.KNeighbours import KnnClassifier
-
-# Train model
-model = KnnClassifier(k=5)# k= no of nearest neighbours considered during classification
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-from mls.Metrics import classification_report
-print(classification_report(y_test, y_pred))
-```
-
-### **7. K-Nearest Neighbors Regressor**
-```python
-from mls.KNeighbours import KnnRegressor
-
-# Train model
-model = KnnRegressorr(k=5)# k= no of nearest neighbours considered during Regression
-model.fit(X_train, y_train)
-
-# Predict
-y_pred = model.predict(X_test)
-
-# Evaluate
-from mls.Metrics import rmse
-print(rmse(y_test, y_pred))
+print("Prediction:", prediction)
 ```
 
 ### **8. Preprocessing Pipeline**
@@ -204,7 +135,7 @@ X_imputed = imputer.fit_transform(X_train)
 # Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_imputed)
-###0r
+###Or
 #####scaler = MinMaxScaler()
 #####X_scaled = scaler.fit_transform(X_imputed)
 
