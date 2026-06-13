@@ -170,11 +170,13 @@ class DecisionTreeClassifier:
         
         return parentNode
 
-    def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None):
+    def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None,cl=None):
         self.X,self.y,self.features=self._X_y_checker(X,y)
         if features is not None:
             self.features=features
         self.class_length=len(np.unique(self.y))
+        if cl is not None:
+            self.class_length=cl
         root=self._selectSplit(self.X,self.y,[])
         root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
         self.root=root
@@ -358,7 +360,7 @@ class DecisionTreeRegressor:
     def _traverseTree(self,tc):
         temp=self.root
         while temp.left is not None and temp.right is not None:
-            if tc[temp.index]>=temp.threshold:
+            if tc[np.where(self.features == temp.val)[0][0]]>=temp.threshold:
                 if temp.left is None:
                     return temp
                 temp=temp.left
