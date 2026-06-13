@@ -30,12 +30,9 @@ class DecisionTreeClassifier:
             raise ValueError("y has to be a numpy array or Series")
         
         classes=None
-        if(isinstance(X,pd.DataFrame)):
-            classes=list(X.columns)
-            
         X_temp = np.array(X)
         y_temp = np.array(y)
-
+        classes=np.arange(X.shape[1])
         if not np.issubdtype(X_temp.dtype, np.number):
             raise TypeError("X must be numerical or one hot encoded")
         if not np.issubdtype(y_temp.dtype,np.number):
@@ -124,8 +121,9 @@ class DecisionTreeClassifier:
                 thresholds[i]=tupl[1][1]
                 heapq.heappush(impurities,tupl[0])
         selectedNode=heapq.heappop(impurities)[1]
-        val= self.features[selectedNode]if self.features is not None else i
-        newNode=_TreeNode(val,y[X[:,selectedNode]>=thresholds[i]],~y[X[:,selectedNode]>=thresholds[i]],thresholds[i],i)
+        val= self.features[selectedNode]
+        newNode=_TreeNode(val,y[X[:,selectedNode]>=thresholds[selectedNode]],
+                          y[~X[:,selectedNode]>=thresholds[selectedNode]],thresholds[selectedNode],selectedNode)
         return newNode
     
     def _splitValidator(self,parentNode,childNode,left):
@@ -144,7 +142,7 @@ class DecisionTreeClassifier:
         postSplitImp=postSplitImp+np.sum(child_y2)*(1-np.sum(np.square(child_y2/np.sum(child_y2))))
         postSplitImp=postSplitImp/(np.sum(child_y1) + np.sum(child_y2))
 
-        return postSplitImp>preSplitImp
+        return postSplitImp<preSplitImp
     
     def _buildTree(self,X,y,parentNode: _TreeNode,currSplits,depth,maxDepth,minSamples):
         if depth>=maxDepth:
@@ -163,17 +161,19 @@ class DecisionTreeClassifier:
         rightNode=self._selectSplit(right_X,right_y,currSplits + [parentNode.index])
 
         if self._splitValidator(parentNode,leftNode,left=True):
-            parentNode.left=self._buildTree(left_X,left_y,currSplits+[parentNode.index],depth+1,
+            parentNode.left=self._buildTree(left_X,left_y,leftNode,currSplits+[parentNode.index],depth+1,
                                             maxDepth,minSamples)
         
         if self._splitValidator(parentNode,rightNode,left=False):
-            parentNode.right=self._buildTree(right_X,right_y,currSplits+[parentNode.index],depth+1,
+            parentNode.right=self._buildTree(right_X,right_y,rightNode,currSplits+[parentNode.index],depth+1,
                                              maxDepth,minSamples)
         
         return parentNode
 
-    def fit(self,X,y,max_depth=float('inf'),min_samples=0):
+    def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None):
         self.X,self.y,self.features=self._X_y_checker(X,y)
+        if features is not None:
+            self.features=features
         self.class_length=len(np.unique(self.y))
         root=self._selectSplit(self.X,self.y,[])
         root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
@@ -183,7 +183,7 @@ class DecisionTreeClassifier:
         temp=self.root
 
         while temp.left is not None and temp.right is not None:
-            if tc[temp.index]>=temp.threshold:
+            if tc[np.where(self.features == temp.val)[0][0]]>=temp.threshold:
                 if temp.left is None:
                     break
                 temp=temp.left
@@ -237,8 +237,7 @@ class DecisionTreeRegressor:
             raise ValueError("y has to be a numpy array or Series")
         
         classes=None
-        if(isinstance(X,pd.DataFrame)):
-            classes=list(X.columns)
+        classes=np.arange(X.shape[1])
             
         X_temp = np.array(X)
         y_temp = np.array(y)
@@ -306,7 +305,7 @@ class DecisionTreeRegressor:
                 heapq.heappush(losses,(best_threshold[0],i))
 
         selectedSplit=heapq.heappop(losses)[1]
-        val= self.features[selectedSplit] if self.features is not None else selectedSplit
+        val= self.features[selectedSplit]
         newNode=_TreeNode(val,y[X[:,selectedSplit]>=thresholds[selectedSplit]],
                           y[X[:,selectedSplit]<thresholds[selectedSplit]],thresholds[selectedSplit],selectedSplit)
         
@@ -322,7 +321,7 @@ class DecisionTreeRegressor:
         rightLoss=np.sum(np.square(childNode.y2-np.mean(childNode.y2)))
         childLoss=(childNode.y1.shape[0]*leftLoss+childNode.y2.shape[0]*rightLoss)/(childNode.y1.shape[0]+
                                                                                     childNode.y2.shape[0])
-        return childLoss>loss
+        return childLoss<loss
     
     def _buildTree(self,X,y,parentNode : _TreeNode,currSplits,depth,maxDepth,min_samples):
         if depth>=maxDepth:
@@ -331,7 +330,7 @@ class DecisionTreeRegressor:
             return parentNode
         
         left_y,right_y=parentNode.y1,parentNode.y2
-        left_mask=y>=parentNode.threshold
+        left_mask=X[:,parentNode.index]>=parentNode.threshold
         right_mask=~left_mask
 
         left_X=X[left_mask,:]
@@ -341,15 +340,17 @@ class DecisionTreeRegressor:
         rightNode=self._selectSplit(right_X,right_y,currSplits+[parentNode.index])
 
         if self._splitValidator(parentNode,leftNode,True):
-            parentNode.left=self._buildTree(left_X,left_y,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
+            parentNode.left=self._buildTree(left_X,left_y,leftNode,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
 
         if self._splitValidator(parentNode,rightNode,False):
-            parentNode.right=self._buildTree(right_X,right_y,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
+            parentNode.right=self._buildTree(right_X,right_y,rightNode,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
 
         return parentNode                    
     
-    def fit(self,X,y,max_depth=float('inf'),min_samples=0):
+    def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None):
         self.X,self.y,self.features=self._X_y_checker(X,y)
+        if features is not None:
+            self.features=features
         root=self._selectSplit(self.X,self.y,[])
         root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
         self.root=root
