@@ -4,6 +4,8 @@ from .LinearModels import LinearRegressor,SGD_LinearRegressor,LogisticRegression
 from .Metrics import accuracy_score, rmse,classification_report,confusion_matrix
 from .ModelSelection import split
 from .PreProcessing import StandardScaler,MinMaxScaler,OrdinalEncoder,LabelEncoder,OneHotEncoder,SimpleImputer
+from .Tree import DecisionTreeClassifier,DecisionTreeRegressor
+from .Ensemble import RandomForestClassifier,RandomForestRegressor
 
 __all__ = [
     "GaussianClassifier",
@@ -23,5 +25,9 @@ __all__ = [
     "OrdinalEncoder",
     "LabelEncoder",
     "OneHotEncoder",
-    "SimpleImputer"
+    "SimpleImputer",
+    "DecisionTreeClassifier",
+    "DecisionTreeRegressor",
+    "RandomForestClassifier",
+    "RandomForestRegressor"
 ]
