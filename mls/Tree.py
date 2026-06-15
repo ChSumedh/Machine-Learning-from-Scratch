@@ -3,8 +3,7 @@ import pandas as pd
 import heapq
 
 class _TreeNode:
-    def __init__(self,x,y1,y2,threshold,i):
-        self.val=x
+    def __init__(self,y1,y2,threshold,i):
         self.left=None
         self.right=None
         self.threshold=threshold
@@ -14,12 +13,15 @@ class _TreeNode:
 
 class DecisionTreeClassifier:
 
-    def __init__(self):
+    def __init__(self,max_depth=float('inf'),min_samples=0,cl=None,max_features=None):
         self.X=None
         self.y=None
         self.root=None
         self.features=None
         self.class_length=None
+        self.max_features=max_features
+        self.max_depth=max_depth
+        self.min_samples=min_samples
 
     def _X_y_checker(self,X,y):
         if X is None or y is None:
@@ -54,11 +56,11 @@ class DecisionTreeClassifier:
         
         return X_temp
 
-    def _selectSplit(self,X,y,splitNodes):
+    def _selectSplit(self,X,y,splitNodes,features):
         impurities=[]
         unq=self.class_length
         thresholds=np.zeros(X.shape[1])
-        for i in range(X.shape[1]):
+        for i in features:
             if i in splitNodes:
                 continue
 
@@ -119,11 +121,16 @@ class DecisionTreeClassifier:
                     heapq.heappush(temp,(imp,(j,threshold)))
                 tupl=heapq.heappop(temp)
                 thresholds[i]=tupl[1][1]
-                heapq.heappush(impurities,tupl[0])
+                heapq.heappush(impurities,(tupl[0],i))
         selectedNode=heapq.heappop(impurities)[1]
+<<<<<<< HEAD
         val= self.features[selectedNode]
         newNode=_TreeNode(val,y[X[:,selectedNode]>=thresholds[selectedNode]],
                           y[~X[:,selectedNode]>=thresholds[selectedNode]],thresholds[selectedNode],selectedNode)
+=======
+        newNode=_TreeNode(y[X[:,selectedNode]>=thresholds[selectedNode]],y[~X[:,selectedNode]>=thresholds[selectedNode]],
+                          thresholds[selectedNode],selectedNode)
+>>>>>>> rf-work
         return newNode
     
     def _splitValidator(self,parentNode,childNode,left):
@@ -157,8 +164,13 @@ class DecisionTreeClassifier:
         right_X=X[right_mask]
         right_y=y[right_mask]
 
-        leftNode=self._selectSplit(left_X,left_y,currSplits + [parentNode.index])
-        rightNode=self._selectSplit(right_X,right_y,currSplits + [parentNode.index])
+        if self.max_features is None:
+            features=np.arange(self.X.shape[1])
+        else:
+            features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
+
+        leftNode=self._selectSplit(left_X,left_y,currSplits + [parentNode.index],features)
+        rightNode=self._selectSplit(right_X,right_y,currSplits + [parentNode.index],features)
 
         if self._splitValidator(parentNode,leftNode,left=True):
             parentNode.left=self._buildTree(left_X,left_y,leftNode,currSplits+[parentNode.index],depth+1,
@@ -170,15 +182,29 @@ class DecisionTreeClassifier:
         
         return parentNode
 
+<<<<<<< HEAD
     def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None,cl=None):
+=======
+    def fit(self,X,y,cl):
+>>>>>>> rf-work
         self.X,self.y,self.features=self._X_y_checker(X,y)
         if features is not None:
             self.features=features
         self.class_length=len(np.unique(self.y))
         if cl is not None:
             self.class_length=cl
+<<<<<<< HEAD
         root=self._selectSplit(self.X,self.y,[])
         root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
+=======
+
+        if self.max_features is not None:
+            features=np.arange(X.shape[1])
+        else:
+            features=self.max_features
+        root=self._selectSplit(self.X,self.y,[],features)
+        root=self._buildTree(self.X,self.y,root,[],1,self.max_depth,self.min_samples)
+>>>>>>> rf-work
         self.root=root
     
     def _traverseTree(self,tc):
@@ -224,12 +250,14 @@ class DecisionTreeClassifier:
     
 
 class DecisionTreeRegressor:
-    def __init__(self):
+    def __init__(self,max_depth=float('inf'),min_samples=0,max_features=None):
         self.X=None
         self.y=None
         self.features=None
         self.root=None
-    
+        self.max_features=max_features
+        self.max_depth=max_depth
+        self.min_samples=min_samples
     def _X_y_checker(self,X,y):
         if X is None or y is None:
             raise ValueError("X and y can't be None")
@@ -266,10 +294,10 @@ class DecisionTreeRegressor:
         
         return X_temp
     
-    def _selectSplit(self,X,y,splitNodes):
+    def _selectSplit(self,X,y,splitNodes,features):
         losses=[]
         thresholds=np.zeros(X.shape[1])
-        for i in range(X.shape[1]):
+        for i in features:
             if i in splitNodes:
                 continue
             if len(np.unique(X[:,i]))==2:
@@ -297,6 +325,9 @@ class DecisionTreeRegressor:
                     left_split=y[left_mask]
                     right_split=y[right_mask]
 
+                    if left_split.size == 0 or right_split.size == 0:
+                        continue
+
                     left_pred=np.mean(left_split)
                     right_pred=np.mean(right_split)
 
@@ -307,8 +338,12 @@ class DecisionTreeRegressor:
                 heapq.heappush(losses,(best_threshold[0],i))
 
         selectedSplit=heapq.heappop(losses)[1]
+<<<<<<< HEAD
         val= self.features[selectedSplit]
         newNode=_TreeNode(val,y[X[:,selectedSplit]>=thresholds[selectedSplit]],
+=======
+        newNode=_TreeNode(y[X[:,selectedSplit]>=thresholds[selectedSplit]],
+>>>>>>> rf-work
                           y[X[:,selectedSplit]<thresholds[selectedSplit]],thresholds[selectedSplit],selectedSplit)
         
         return newNode
@@ -332,14 +367,24 @@ class DecisionTreeRegressor:
             return parentNode
         
         left_y,right_y=parentNode.y1,parentNode.y2
+<<<<<<< HEAD
         left_mask=X[:,parentNode.index]>=parentNode.threshold
         right_mask=~left_mask
+=======
+        left_mask = X[:, parentNode.index] >= parentNode.threshold
+        right_mask = ~left_mask
+>>>>>>> rf-work
 
         left_X=X[left_mask,:]
         right_X=X[right_mask,:]
 
-        leftNode=self._selectSplit(left_X,left_y,currSplits+[parentNode.index])
-        rightNode=self._selectSplit(right_X,right_y,currSplits+[parentNode.index])
+        if self.max_features is None:
+            features=np.arange(self.X.shape[1])
+        else:
+            features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
+
+        leftNode=self._selectSplit(left_X,left_y,currSplits+[parentNode.index],features)
+        rightNode=self._selectSplit(right_X,right_y,currSplits+[parentNode.index],features)
 
         if self._splitValidator(parentNode,leftNode,True):
             parentNode.left=self._buildTree(left_X,left_y,leftNode,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
@@ -349,12 +394,23 @@ class DecisionTreeRegressor:
 
         return parentNode                    
     
+<<<<<<< HEAD
     def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None):
         self.X,self.y,self.features=self._X_y_checker(X,y)
         if features is not None:
             self.features=features
         root=self._selectSplit(self.X,self.y,[])
         root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
+=======
+    def fit(self,X,y):
+        self.X,self.y,self.features=self._X_y_checker(X,y)
+        if self.max_features is None:
+            features=np.arange(X.shape[1])
+        else:
+            features=self.max_features
+        root=self._selectSplit(self.X,self.y,[],features)
+        root=self._buildTree(self.X,self.y,root,[],1,self.max_depth,self.min_samples)
+>>>>>>> rf-work
         self.root=root
 
     def _traverseTree(self,tc):
