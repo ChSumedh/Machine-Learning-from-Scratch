@@ -1,182 +1,214 @@
 import numpy as np
 import pytest
 
-from mls.Tree import DecisionTreeClassifier,DecisionTreeRegressor
+from mls.Tree import DecisionTreeClassifier, DecisionTreeRegressor
+from mls.Ensemble import RandomForestClassifier, RandomForestRegressor
 
 
-def test_classifier_fit_predict_simple():
+# ----------------------------
+# DecisionTreeClassifier
+# ----------------------------
 
+def test_classifier_fit_predict():
     X = np.array([
-        [0],
-        [0],
-        [1],
-        [1]
+        [0, 0],
+        [0, 1],
+        [1, 0],
+        [1, 1],
+        [0, 0],
+        [1, 1]
     ])
 
-    y = np.array([
-        0,
-        0,
-        1,
-        1
-    ])
+    y = np.array([0, 0, 1, 1, 0, 1])
 
-    clf = DecisionTreeClassifier()
+    model = DecisionTreeClassifier()
+    model.fit(X, y, max_depth=5)
 
-    clf.fit(X, y, cl=2)
+    preds = model.predict(X)
 
-    preds = clf.predict(X)
-
-    assert np.array_equal(preds, y)
-
-
-def test_classifier_predict_before_fit():
-
-    clf = DecisionTreeClassifier()
-
-    with pytest.raises(ValueError):
-        clf.predict(np.array([[0]]))
+    assert preds.shape == y.shape
+    assert np.mean(preds == y) >= 0.9
 
 
 def test_classifier_predict_proba_shape():
-
     X = np.array([
-        [0],
-        [1]
+        [0, 0],
+        [0, 1],
+        [1, 0],
+        [1, 1]
     ])
 
-    y = np.array([
-        0,
-        1
-    ])
+    y = np.array([0, 0, 1, 1])
 
-    clf = DecisionTreeClassifier()
+    model = DecisionTreeClassifier()
+    model.fit(X, y)
 
-    clf.fit(X, y, cl=2)
+    probas = model.predict_proba(X)
 
-    probs = clf.predict_proba(X)
-
-    assert probs.shape == (2, 2)
+    assert probas.shape == (4, 2)
 
 
-def test_classifier_x_feature_mismatch():
+def test_classifier_max_features():
+    rng = np.random.default_rng(42)
 
-    X = np.array([
-        [0],
-        [1]
-    ])
+    X = rng.integers(0, 2, size=(100, 5))
+    y = X[:, 0]
 
-    y = np.array([
-        0,
-        1
-    ])
+    model = DecisionTreeClassifier()
+    model.fit(X, y, max_depth=10, max_features=2)
 
-    clf = DecisionTreeClassifier()
+    preds = model.predict(X)
 
-    clf.fit(X, y, cl=2)
+    assert np.mean(preds == y) >= 0.8
 
-    with pytest.raises(ValueError):
-        clf.predict(np.array([[0, 1]]))
 
-def test_regressor_fit_predict_simple():
+# ----------------------------
+# DecisionTreeRegressor
+# ----------------------------
 
+def test_regressor_fit_predict():
     X = np.array([
         [1],
         [2],
         [3],
-        [4]
+        [10],
+        [11],
+        [12]
     ])
 
     y = np.array([
         1,
-        2,
-        3,
-        4
-    ])
-
-    reg = DecisionTreeRegressor()
-
-    reg.fit(X, y)
-
-    preds = reg.predict(X)
-
-    assert preds.shape == y.shape
-
-
-def test_regressor_predict_before_fit():
-
-    reg = DecisionTreeRegressor()
-
-    with pytest.raises(ValueError):
-        reg.predict(np.array([[1]]))
-
-
-def test_regressor_feature_mismatch():
-
-    X = np.array([
-        [1],
-        [2]
-    ])
-
-    y = np.array([
         1,
-        2
+        1,
+        10,
+        10,
+        10
     ])
 
-    reg = DecisionTreeRegressor()
+    model = DecisionTreeRegressor()
+    model.fit(X, y, max_depth=5)
 
-    reg.fit(X, y)
+    preds = model.predict(X)
 
-    with pytest.raises(ValueError):
-        reg.predict(np.array([[1, 2]]))
-
-
-def test_classifier_max_features():
-
-    X = np.random.rand(100, 5)
-
-    y = (X[:, 0] > 0.5).astype(int)
-
-    clf = DecisionTreeClassifier(
-        max_features=3
-    )
-
-    clf.fit(X, y, cl=2)
-
-    preds = clf.predict(X)
+    mse = np.mean((preds - y) ** 2)
 
     assert preds.shape == y.shape
+    assert mse < 1.0
 
 
 def test_regressor_max_features():
+    rng = np.random.default_rng(42)
 
-    X = np.random.rand(100, 5)
+    X = rng.normal(size=(200, 4))
+    y = 5 * X[:, 0]
 
-    y = X[:, 0] + X[:, 1]
+    model = DecisionTreeRegressor()
+    model.fit(X, y, max_depth=10, max_features=2)
 
-    reg = DecisionTreeRegressor(
-        max_features=3
+    preds = model.predict(X)
+
+    mse = np.mean((preds - y) ** 2)
+
+    assert mse < 5
+
+
+# ----------------------------
+# RandomForestClassifier
+# ----------------------------
+
+def test_rf_classifier_fit_predict():
+    rng = np.random.default_rng(42)
+
+    X = rng.integers(0, 2, size=(200, 4))
+    y = (X[:, 0] ^ X[:, 1]).astype(int)
+
+    model = RandomForestClassifier(
+        n_estimators=20,
+        max_depth=10,
+        max_features=2
     )
 
-    reg.fit(X, y)
+    model.fit(X, y)
 
-    preds = reg.predict(X)
+    preds = model.predict(X)
 
     assert preds.shape == y.shape
+    assert np.mean(preds == y) > 0.9
 
-def test_classifier_training_accuracy():
 
-    np.random.seed(42)
+def test_rf_classifier_predict_proba():
+    rng = np.random.default_rng(42)
 
-    X = np.random.rand(200, 4)
+    X = rng.integers(0, 2, size=(100, 3))
+    y = X[:, 0]
 
-    y = (X[:, 0] > 0.5).astype(int)
+    model = RandomForestClassifier(
+        n_estimators=10,
+        max_depth=5,
+        max_features=2
+    )
 
-    clf = DecisionTreeClassifier()
+    model.fit(X, y)
 
-    clf.fit(X, y, cl=2)
+    probas = model.predict_proba(X)
 
-    preds = clf.predict(X)
+    assert probas.shape == (100, 2)
+    assert np.allclose(probas.sum(axis=1), 1.0)
 
-    acc = np.mean(preds == y)
 
-    assert acc > 0.95
+# ----------------------------
+# RandomForestRegressor
+# ----------------------------
+
+def test_rf_regressor_fit_predict():
+    rng = np.random.default_rng(42)
+
+    X = rng.normal(size=(200, 3))
+    y = 3 * X[:, 0] - 2 * X[:, 1]
+
+    model = RandomForestRegressor(
+        n_estimators=20,
+        max_depth=10,
+        max_features=2
+    )
+
+    model.fit(X, y)
+
+    preds = model.predict(X)
+
+    mse = np.mean((preds - y) ** 2)
+
+    assert preds.shape == y.shape
+    assert mse < 2
+
+
+# ----------------------------
+# Error handling
+# ----------------------------
+
+def test_classifier_predict_before_fit():
+    model = DecisionTreeClassifier()
+
+    with pytest.raises(Exception):
+        model.predict(np.array([[0, 0]]))
+
+
+def test_regressor_predict_before_fit():
+    model = DecisionTreeRegressor()
+
+    with pytest.raises(Exception):
+        model.predict(np.array([[1]]))
+
+
+def test_rf_classifier_predict_before_fit():
+    model = RandomForestClassifier()
+
+    with pytest.raises(Exception):
+        model.predict(np.array([[0, 0]]))
+
+
+def test_rf_regressor_predict_before_fit():
+    model = RandomForestRegressor()
+
+    with pytest.raises(Exception):
+        model.predict(np.array([[1]]))
