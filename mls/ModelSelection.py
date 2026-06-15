@@ -37,8 +37,11 @@ def split(X,y,split_size,stratify_y,random_state=None):
         yn=yn.iloc[idx]
     else:
         yn=yn[idx]
-
-    classes=list((yn.unique()))
+    if(isinstance(Xn,pd.DataFrame)):
+        classes=list((yn.unique()))
+    else:
+        classes=list(np.unique(yn))
+    
     class_indices={clas:list(np.where(yn==clas)) for clas in classes}
 
     X_train=[]

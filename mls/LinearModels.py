@@ -43,7 +43,7 @@ def _X_t_checker(X_t,X):
     if np.isnan(X_t_temp).any():
         raise ValueError("There shouldn't be NaN values in X_t")
     if X_t_temp.ndim == 1:
-        X_t = X_t.reshape(1, -1)
+        X_t_temp = X_t_temp.reshape(1, -1)
 
     if X_t_temp.shape[1] != X.shape[1]:
         raise ValueError("X and X_t must have the same number of features")
