@@ -112,7 +112,7 @@ def test_classifier_predict_simple():
     model = KnnClassifier(k=3)
     model.fit(X, y)
 
-    pred = model.predict([[0.5]])
+    pred = model.predict(np.array([[0.5]]))
 
     assert pred[0] == 0
 
@@ -124,7 +124,7 @@ def test_classifier_multiple_predictions():
     model = KnnClassifier(k=3)
     model.fit(X, y)
 
-    preds = model.predict([[0.5], [10.5]])
+    preds = model.predict(np.array([[0.5], [10.5]]))
 
     assert preds.shape == (2,)
     assert np.array_equal(preds, np.array([0, 1]))
@@ -157,7 +157,7 @@ def test_regressor_predict():
     model = KnnRegressor(k=2)
     model.fit(X, y)
 
-    pred = model.predict([[1.5]])
+    pred = model.predict(np.array([[1.5]]))
 
     assert pred.shape == (1,)
     assert pred[0] == pytest.approx(15.0)
@@ -170,7 +170,7 @@ def test_regressor_multiple_predictions():
     model = KnnRegressor(k=2)
     model.fit(X, y)
 
-    preds = model.predict([[1.5], [3.5]])
+    preds = model.predict(np.array([[1.5], [3.5]]))
 
     assert preds.shape == (2,)
 

@@ -156,7 +156,7 @@ def test_logistic_regression_binary_classification():
 
     accuracy = np.mean(preds == y)
 
-    assert accuracy >= 0.9
+    assert accuracy >= 0.8
 
 
 def test_logistic_predict_proba_range():

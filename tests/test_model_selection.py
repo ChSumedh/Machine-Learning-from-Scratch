@@ -51,10 +51,10 @@ def test_split_numpy_sizes():
         random_state=42
     )
 
-    assert len(X_train) == 40
-    assert len(X_test) == 10
-    assert len(y_train) == 40
-    assert len(y_test) == 10
+    assert len(X_test) == int((0.2)*len(X))
+    assert len(X_train) == len(X) - len(X_test)
+    assert len(y_train) == int((0.2)*len(X)) 
+    assert len(y_test) == len(X) - len(X_test)
 
 
 def test_split_reproducible():

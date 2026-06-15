@@ -56,15 +56,12 @@ class DecisionTreeClassifier:
         
         return X_temp
 
-    def _selectSplit(self,X,y,splitNodes,features):
+    def _selectSplit(self,X,y,features):
         impurities=[]
         unq=self.class_length
         thresholds=np.zeros(X.shape[1])
         for i in features:
-            if i in splitNodes:
-                continue
-
-            if(np.unique_counts(X[:,i]).counts==2):
+            if(len(np.unique(X[:,i])==2)):
                 left_mask = X[:, i] == 0
                 right_mask = ~left_mask
 
@@ -145,7 +142,7 @@ class DecisionTreeClassifier:
 
         return postSplitImp<preSplitImp
     
-    def _buildTree(self,X,y,parentNode: _TreeNode,currSplits,depth,maxDepth,minSamples):
+    def _buildTree(self,X,y,parentNode: _TreeNode,depth,maxDepth,minSamples):
         if depth>=maxDepth:
             return parentNode
         if y.shape[0]<minSamples:
@@ -163,32 +160,30 @@ class DecisionTreeClassifier:
         else:
             features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
 
-        leftNode=self._selectSplit(left_X,left_y,currSplits + [parentNode.index],features)
-        rightNode=self._selectSplit(right_X,right_y,currSplits + [parentNode.index],features)
+        leftNode=self._selectSplit(left_X,left_y,features)
+        rightNode=self._selectSplit(right_X,right_y,features)
 
         if self._splitValidator(parentNode,leftNode,left=True):
-            parentNode.left=self._buildTree(left_X,left_y,leftNode,currSplits+[parentNode.index],depth+1,
+            parentNode.left=self._buildTree(left_X,left_y,leftNode,depth+1,
                                             maxDepth,minSamples)
         
         if self._splitValidator(parentNode,rightNode,left=False):
-            parentNode.right=self._buildTree(right_X,right_y,rightNode,currSplits+[parentNode.index],depth+1,
+            parentNode.right=self._buildTree(right_X,right_y,rightNode,depth+1,
                                              maxDepth,minSamples)
         
         return parentNode
 
     def fit(self,X,y,cl):
         self.X,self.y,self.features=self._X_y_checker(X,y)
-        if features is not None:
-            self.features=features
         self.class_length=len(np.unique(self.y))
         if cl is not None:
             self.class_length=cl
 
         if self.max_features is not None:
-            features=np.arange(X.shape[1])
+            features=np.arange(self.X.shape[1])
         else:
-            features=self.max_features
-        root=self._selectSplit(self.X,self.y,[],features)
+            features=np.random.choice(self.max_features,self.X.shape[1],replace=False)
+        root=self._selectSplit(self.X,self.y,features)
         root=self._buildTree(self.X,self.y,root,[],1,self.max_depth,self.min_samples)
         self.root=root
     
@@ -279,12 +274,10 @@ class DecisionTreeRegressor:
         
         return X_temp
     
-    def _selectSplit(self,X,y,splitNodes,features):
+    def _selectSplit(self,X,y,features):
         losses=[]
         thresholds=np.zeros(X.shape[1])
         for i in features:
-            if i in splitNodes:
-                continue
             if len(np.unique(X[:,i]))==2:
                 left_mask= X[:,i]==0
                 right_mask=~left_mask
@@ -318,6 +311,8 @@ class DecisionTreeRegressor:
 
                     curr_loss=np.sum(np.square(left_split-left_pred))+np.sum(np.square(right_split-right_pred))
                     heapq.heappush(curr_thresholds,(curr_loss,curr_threshold))
+                if len(curr_thresholds)==0:
+                    continue
                 best_threshold=heapq.heappop(curr_thresholds)
                 thresholds[i]=best_threshold[1]
                 heapq.heappush(losses,(best_threshold[0],i))
@@ -340,7 +335,7 @@ class DecisionTreeRegressor:
                                                                                     childNode.y2.shape[0])
         return childLoss<loss
     
-    def _buildTree(self,X,y,parentNode : _TreeNode,currSplits,depth,maxDepth,min_samples):
+    def _buildTree(self,X,y,parentNode : _TreeNode,depth,maxDepth,min_samples):
         if depth>=maxDepth:
             return parentNode
         if y.shape[0]<min_samples:
@@ -360,14 +355,14 @@ class DecisionTreeRegressor:
         else:
             features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
 
-        leftNode=self._selectSplit(left_X,left_y,currSplits+[parentNode.index],features)
-        rightNode=self._selectSplit(right_X,right_y,currSplits+[parentNode.index],features)
+        leftNode=self._selectSplit(left_X,left_y,features)
+        rightNode=self._selectSplit(right_X,right_y,features)
 
         if self._splitValidator(parentNode,leftNode,True):
-            parentNode.left=self._buildTree(left_X,left_y,leftNode,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
+            parentNode.left=self._buildTree(left_X,left_y,leftNode,depth+1,maxDepth,min_samples)
 
         if self._splitValidator(parentNode,rightNode,False):
-            parentNode.right=self._buildTree(right_X,right_y,rightNode,currSplits+[parentNode.index],depth+1,maxDepth,min_samples)
+            parentNode.right=self._buildTree(right_X,right_y,rightNode,depth+1,maxDepth,min_samples)
 
         return parentNode                    
     
@@ -376,15 +371,15 @@ class DecisionTreeRegressor:
         if self.max_features is None:
             features=np.arange(X.shape[1])
         else:
-            features=self.max_features
-        root=self._selectSplit(self.X,self.y,[],features)
+            features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
+        root=self._selectSplit(self.X,self.y,features)
         root=self._buildTree(self.X,self.y,root,[],1,self.max_depth,self.min_samples)
         self.root=root
 
     def _traverseTree(self,tc):
         temp=self.root
         while temp.left is not None and temp.right is not None:
-            if tc[np.where(self.features == temp.val)[0][0]]>=temp.threshold:
+            if tc[temp.index]>=temp.threshold:
                 if temp.left is None:
                     return temp
                 temp=temp.left
