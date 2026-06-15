@@ -105,7 +105,7 @@ class RandomForestRegressor:
             self.trees.append(tree)
 
     def predict(self, X_t):
-        if self.X is None:
+        if self.trees is None:
             raise ValueError("Cannot predict without fitting")
         X_t = np.asarray(X_t)
 

@@ -160,9 +160,13 @@ class DecisionTreeClassifier:
         right_y=y[right_mask]
 
         if self.max_features is None:
-            features=np.arange(self.X.shape[1])
+            features = np.arange(self.X.shape[1])
         else:
-            features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
+            features = np.random.choice(
+                self.X.shape[1],
+                self.max_features,
+                replace=False
+            )
 
         leftNode=self._selectSplit(left_X,left_y,features)
         rightNode=self._selectSplit(right_X,right_y,features)
@@ -177,16 +181,20 @@ class DecisionTreeClassifier:
         
         return parentNode
 
-    def fit(self,X,y,cl):
+    def fit(self,X,y,cl=None):
         self.X,self.y,self.features=self._X_y_checker(X,y)
         self.class_length=len(np.unique(self.y))
         if cl is not None:
             self.class_length=cl
 
-        if self.max_features is not None:
-            features=np.arange(self.X.shape[1])
+        if self.max_features is None:
+            features = np.arange(self.X.shape[1])
         else:
-            features=np.random.choice(self.max_features,self.X.shape[1],replace=False)
+            features = np.random.choice(
+                self.X.shape[1],
+                self.max_features,
+                replace=False
+            )
         root=self._selectSplit(self.X,self.y,features)
         if root is not None:
             root=self._buildTree(self.X,self.y,root,1,self.max_depth,self.min_samples)
@@ -197,7 +205,7 @@ class DecisionTreeClassifier:
         if temp is None:
             raise ValueError("Absolutely nothing was able to be learnt from the data")
         while temp.left is not None and temp.right is not None:
-            if tc[np.where(self.features == temp.val)[0][0]]>=temp.threshold:
+            if tc[temp.index]>=temp.threshold:
                 if temp.left is None:
                     break
                 temp=temp.left
@@ -234,178 +242,159 @@ class DecisionTreeClassifier:
             predictions[i]=np.argmax(probas[i,:])
         return predictions
     
-
 class DecisionTreeRegressor:
-    def __init__(self,max_depth=10e8,min_samples=0,max_features=None):
-        self.X=None
-        self.y=None
-        self.features=None
-        self.root=None
-        self.max_features=max_features
-        self.max_depth=max_depth
-        self.min_samples=min_samples
-    def _X_y_checker(self,X,y):
+
+    def __init__(self, max_depth=10, min_samples=2, max_features=None):
+        self.root = None
+        self.X = None
+        self.y = None
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples
+        self.max_features = max_features
+
+    # ---------------- utils ----------------
+    def _check(self, X, y):
         if X is None or y is None:
-            raise ValueError("X and y can't be None")
-        if not(isinstance(X,pd.DataFrame) or isinstance(X,np.ndarray)):
-            raise ValueError("X has to be a numpy array or DataFrame")
-        if not(isinstance(y,pd.Series) or isinstance(y,np.ndarray)):
-            raise ValueError("y has to be a numpy array or Series")
-        
-        classes=None
-        classes=np.arange(X.shape[1])
-            
-        X_temp = np.array(X)
-        y_temp = np.array(y)
+            raise ValueError("X and y cannot be None")
 
-        if not np.issubdtype(X_temp.dtype, np.number):
-            raise TypeError("X must be numerical or one hot encoded")
-        
-        if not np.issubdtype(y_temp.dtype,np.number):
-            raise TypeError("y must be numerical")
-        
-        return X_temp,y_temp,classes
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+        if isinstance(y, pd.Series):
+            y = y.values
 
-    def _X_t_Checker(self,X_t,X):
-        if X_t is None:
-            raise ValueError("X_t can't be None")
-        if not(isinstance(X_t,pd.DataFrame) or isinstance(X_t,np.ndarray)):
-            raise ValueError("X_t has to be a numpy array or DataFrame")
-        X_temp = np.array(X_t)
-        if not np.issubdtype(X_temp.dtype, np.number):
-            raise TypeError("X must be numerical or one hot encoded")
-        
-        if X_temp.shape[1]!=X.shape[1]:
-            raise ValueError("Feature count mismatch between training data and testing data")
-        
-        return X_temp
-    
-    def _selectSplit(self,X,y,features):
-        losses=[]
-        thresholds=np.zeros(X.shape[1])
+        X = np.array(X, dtype=float)
+        y = np.array(y, dtype=float)
+
+        return X, y
+
+    def _mse(self, y):
+        if y.size == 0:
+            return 0.0
+        return np.mean((y - np.mean(y)) ** 2)
+
+    # ---------------- split finder ----------------
+    def _selectSplit(self, X, y, features):
+        best_loss = float("inf")
+        best_node = None
+
         for i in features:
-            if len(np.unique(X[:,i]))==2:
-                left_mask= X[:,i]==0
-                right_mask=~left_mask
 
-                left_split=y[left_mask]
-                right_split=y[right_mask]
+            values = np.unique(X[:, i])
+            if len(values) == 1:
+                continue
 
-                left_pred=np.mean(left_split)
-                right_pred=np.mean(right_split)
+            thresholds = (values[:-1] + values[1:]) / 2
 
-                curr_loss=np.sum(np.square(left_split-left_pred))+np.sum(np.square(right_split-right_pred))
-                heapq.heappush(losses,(curr_loss,i))
-            
-            else:
-                values=np.sort(X[:,i])
-                curr_thresholds=[]
-                for j in range(values.shape[0]-1):
-                    curr_threshold=(values[j]+values[j+1])/2
-                    
-                    left_mask=X[:,i]>=curr_threshold
-                    right_mask=~left_mask
+            for t in thresholds:
+                left_mask = X[:, i] <= t
+                right_mask = ~left_mask
 
-                    left_split=y[left_mask]
-                    right_split=y[right_mask]
+                y1 = y[left_mask]
+                y2 = y[right_mask]
 
-                    if left_split.size == 0 or right_split.size == 0:
-                        continue
-
-                    left_pred=np.mean(left_split)
-                    right_pred=np.mean(right_split)
-
-                    curr_loss=np.sum(np.square(left_split-left_pred))+np.sum(np.square(right_split-right_pred))
-                    heapq.heappush(curr_thresholds,(curr_loss,curr_threshold))
-                if len(curr_thresholds)==0:
+                if y1.size == 0 or y2.size == 0:
                     continue
-                best_threshold=heapq.heappop(curr_thresholds)
-                thresholds[i]=best_threshold[1]
-                heapq.heappush(losses,(best_threshold[0],i))
-        if len(losses) == 0:
+
+                loss = (
+                    y1.size * self._mse(y1) +
+                    y2.size * self._mse(y2)
+                ) / y.size
+
+                if loss < best_loss:
+                    best_loss = loss
+                    best_node = _TreeNode(y1, y2, t, i)
+
+        return best_node
+
+    # ---------------- build tree ----------------
+    def _buildTree(self, X, y, node, depth):
+
+        if node is None:
             return None
-        selectedSplit=heapq.heappop(losses)[1]
-        newNode=_TreeNode(y[X[:,selectedSplit]>=thresholds[selectedSplit]],
-                          y[X[:,selectedSplit]<thresholds[selectedSplit]],thresholds[selectedSplit],selectedSplit)
-        
-        return newNode
-    
-    def _splitValidator(self,parentNode,childNode,left):
-        if left:
-            loss=np.sum(np.square(parentNode.y1-np.mean(parentNode.y1)))
-        else:
-            loss=np.sum(np.square(parentNode.y2-np.mean(parentNode.y2)))
-        
-        leftLoss=np.sum(np.square(childNode.y1-np.mean(childNode.y1)))
-        rightLoss=np.sum(np.square(childNode.y2-np.mean(childNode.y2)))
-        childLoss = (leftLoss + rightLoss) / (childNode.y1.shape[0] + childNode.y2.shape[0])
-        return childLoss<loss
-    
-    def _buildTree(self,X,y,parentNode : _TreeNode,depth,maxDepth,min_samples):
-        if depth>=maxDepth:
-            return parentNode
-        if y.shape[0]<min_samples:
-            return parentNode
-        
-        left_y,right_y=parentNode.y1,parentNode.y2
-        left_mask=X[:,parentNode.index]>=parentNode.threshold
-        right_mask=~left_mask
-        left_mask = X[:, parentNode.index] >= parentNode.threshold
+
+        if (
+            depth >= self.max_depth
+            or y.size < self.min_samples_split
+            or np.all(y == y[0])
+        ):
+            return node
+
+        left_mask = X[:, node.index] <= node.threshold
         right_mask = ~left_mask
 
-        left_X=X[left_mask,:]
-        right_X=X[right_mask,:]
+        if np.sum(left_mask) == 0 or np.sum(right_mask) == 0:
+            return node
+
+        left_X, left_y = X[left_mask], y[left_mask]
+        right_X, right_y = X[right_mask], y[right_mask]
 
         if self.max_features is None:
-            features=np.arange(self.X.shape[1])
+            features = np.arange(X.shape[1])
         else:
-            features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
+            features = np.random.choice(
+                X.shape[1],
+                self.max_features,
+                replace=False
+            )
 
-        leftNode=self._selectSplit(left_X,left_y,features)
-        rightNode=self._selectSplit(right_X,right_y,features)
+        node.left = self._selectSplit(left_X, left_y, features)
+        node.right = self._selectSplit(right_X, right_y, features)
 
-        if leftNode is not None and self._splitValidator(parentNode,leftNode,True) :
-            parentNode.left=self._buildTree(left_X,left_y,leftNode,depth+1,maxDepth,min_samples)
+        node.left = self._buildTree(left_X, left_y, node.left, depth + 1)
+        node.right = self._buildTree(right_X, right_y, node.right, depth + 1)
 
-        if rightNode is not None and self._splitValidator(parentNode,rightNode,False):
-            parentNode.right=self._buildTree(right_X,right_y,rightNode,depth+1,maxDepth,min_samples)
+        return node
 
-        return parentNode                    
-    
-    def fit(self,X,y):
-        self.X,self.y,self.features=self._X_y_checker(X,y)
-        if self.max_features is None:
-            features=np.arange(X.shape[1])
-        else:
-            features=np.random.choice(self.X.shape[1],self.max_features,replace=False)
-        root=self._selectSplit(self.X,self.y,features)
-        if root is not None:
-            root=self._buildTree(self.X,self.y,root,1,self.max_depth,self.min_samples)
-        self.root=root
+    # ---------------- fit ----------------
+    def fit(self, X, y):
+        self.X, self.y = self._check(X, y)
 
-    def _traverseTree(self,tc):
-        temp=self.root
-        if temp is None:
-            raise ValueError("Absolutely nothing was learnt")
-        while temp.left is not None and temp.right is not None:
-            if tc[temp.index]>=temp.threshold:
-                if temp.left is None:
-                    return temp
-                temp=temp.left
+        features = np.arange(self.X.shape[1])
+
+        self.root = self._selectSplit(self.X, self.y, features)
+
+        self.root = self._buildTree(self.X, self.y, self.root, depth=1)
+
+    # ---------------- traverse ----------------
+    def _traverse(self, x):
+        node = self.root
+
+        if node is None:
+            raise ValueError("Model not trained")
+
+        while node.left is not None or node.right is not None:
+            if x[node.index] <= node.threshold:
+                if node.left is None:
+                    break
+                node = node.left
             else:
-                if temp.right is None:
-                    return temp
-                temp=temp.right
-        
-        return temp
-    def predict(self,X_t):
-        if self.X is None:
-            raise ValueError("Cannot predict without training")
-        X_t=self._X_t_Checker(X_t,self.X)
-        ans=np.zeros(X_t.shape[0])
-        for i in range(ans.shape[0]):
-            leaf=self._traverseTree(X_t[i,:])
-            ans[i] = np.mean(leaf.y1) if X_t[i,leaf.index]>=leaf.threshold else np.mean(leaf.y2)
-        
-        return ans
-    
+                if node.right is None:
+                    break
+                node = node.right
+
+        return node
+
+    # ---------------- predict ----------------
+    def predict(self, X):
+        if self.root is None:
+            raise ValueError("Model not trained")
+
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+
+        X = np.array(X, dtype=float)
+
+        preds = np.zeros(X.shape[0])
+
+        for i in range(X.shape[0]):
+            leaf = self._traverse(X[i])
+
+            # SAFE prediction (prevents NaN)
+            y_all = np.concatenate([leaf.y1, leaf.y2])
+
+            if y_all.size == 0:
+                preds[i] = 0.0
+            else:
+                preds[i] = np.mean(y_all)
+
+        return preds

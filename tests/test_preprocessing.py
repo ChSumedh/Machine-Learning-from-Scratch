@@ -139,7 +139,7 @@ def test_imputer_mean():
         "A": [1, np.nan, 3]
     })
 
-    imp = SimpleImputer(strategy="mean")
+    imp = SimpleImputer(strat="mean")
     imp.fit(X)
 
     Xt = imp.transform(X)
@@ -154,7 +154,7 @@ def test_imputer_median():
         "A": [1, np.nan, 100]
     })
 
-    imp = SimpleImputer(strategy="median")
+    imp = SimpleImputer(strat="median")
     imp.fit(X)
 
     Xt = imp.transform(X)
@@ -168,7 +168,7 @@ def test_imputer_mode():
         "A": [1, 1, np.nan, 2]
     })
 
-    imp = SimpleImputer(strategy="most_frequent")
+    imp = SimpleImputer(strat="mode")
     imp.fit(X)
 
     Xt = imp.transform(X)
