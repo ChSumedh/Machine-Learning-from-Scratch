@@ -123,14 +123,8 @@ class DecisionTreeClassifier:
                 thresholds[i]=tupl[1][1]
                 heapq.heappush(impurities,(tupl[0],i))
         selectedNode=heapq.heappop(impurities)[1]
-<<<<<<< HEAD
-        val= self.features[selectedNode]
-        newNode=_TreeNode(val,y[X[:,selectedNode]>=thresholds[selectedNode]],
-                          y[~X[:,selectedNode]>=thresholds[selectedNode]],thresholds[selectedNode],selectedNode)
-=======
         newNode=_TreeNode(y[X[:,selectedNode]>=thresholds[selectedNode]],y[~X[:,selectedNode]>=thresholds[selectedNode]],
                           thresholds[selectedNode],selectedNode)
->>>>>>> rf-work
         return newNode
     
     def _splitValidator(self,parentNode,childNode,left):
@@ -182,21 +176,13 @@ class DecisionTreeClassifier:
         
         return parentNode
 
-<<<<<<< HEAD
-    def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None,cl=None):
-=======
     def fit(self,X,y,cl):
->>>>>>> rf-work
         self.X,self.y,self.features=self._X_y_checker(X,y)
         if features is not None:
             self.features=features
         self.class_length=len(np.unique(self.y))
         if cl is not None:
             self.class_length=cl
-<<<<<<< HEAD
-        root=self._selectSplit(self.X,self.y,[])
-        root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
-=======
 
         if self.max_features is not None:
             features=np.arange(X.shape[1])
@@ -204,7 +190,6 @@ class DecisionTreeClassifier:
             features=self.max_features
         root=self._selectSplit(self.X,self.y,[],features)
         root=self._buildTree(self.X,self.y,root,[],1,self.max_depth,self.min_samples)
->>>>>>> rf-work
         self.root=root
     
     def _traverseTree(self,tc):
@@ -338,12 +323,7 @@ class DecisionTreeRegressor:
                 heapq.heappush(losses,(best_threshold[0],i))
 
         selectedSplit=heapq.heappop(losses)[1]
-<<<<<<< HEAD
-        val= self.features[selectedSplit]
-        newNode=_TreeNode(val,y[X[:,selectedSplit]>=thresholds[selectedSplit]],
-=======
         newNode=_TreeNode(y[X[:,selectedSplit]>=thresholds[selectedSplit]],
->>>>>>> rf-work
                           y[X[:,selectedSplit]<thresholds[selectedSplit]],thresholds[selectedSplit],selectedSplit)
         
         return newNode
@@ -367,13 +347,10 @@ class DecisionTreeRegressor:
             return parentNode
         
         left_y,right_y=parentNode.y1,parentNode.y2
-<<<<<<< HEAD
         left_mask=X[:,parentNode.index]>=parentNode.threshold
         right_mask=~left_mask
-=======
         left_mask = X[:, parentNode.index] >= parentNode.threshold
         right_mask = ~left_mask
->>>>>>> rf-work
 
         left_X=X[left_mask,:]
         right_X=X[right_mask,:]
@@ -394,14 +371,6 @@ class DecisionTreeRegressor:
 
         return parentNode                    
     
-<<<<<<< HEAD
-    def fit(self,X,y,max_depth=float('inf'),min_samples=1,features=None):
-        self.X,self.y,self.features=self._X_y_checker(X,y)
-        if features is not None:
-            self.features=features
-        root=self._selectSplit(self.X,self.y,[])
-        root=self._buildTree(self.X,self.y,root,[],1,max_depth,min_samples)
-=======
     def fit(self,X,y):
         self.X,self.y,self.features=self._X_y_checker(X,y)
         if self.max_features is None:
@@ -410,7 +379,6 @@ class DecisionTreeRegressor:
             features=self.max_features
         root=self._selectSplit(self.X,self.y,[],features)
         root=self._buildTree(self.X,self.y,root,[],1,self.max_depth,self.min_samples)
->>>>>>> rf-work
         self.root=root
 
     def _traverseTree(self,tc):
