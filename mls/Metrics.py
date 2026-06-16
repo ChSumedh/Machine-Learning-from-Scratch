@@ -36,8 +36,19 @@ def classification_report(y,y_t):
     cr=np.zeros((len(classes),3))
     for i in range(len(classes)):
         cr[i][0]=cm.loc[classes[i],classes[i]]/np.sum(cm[cm.columns[i]])
-        cr[i][1]=cm.loc[classes[i],classes[i]]/np.sum(cm.loc[classes[i],:])
-        cr[i][2]=2/((1/cr[i][0])+(1/cr[i][1]))
+        row_sum = np.sum(cm.loc[classes[i], :].values)
+
+        if row_sum == 0:
+            cr[i][1] = 0.0
+        else:
+            cr[i][1] = cm.loc[classes[i], classes[i]] / row_sum
+        p = cr[i][0]
+        r = cr[i][1]
+
+        if p + r == 0:
+            cr[i][2] = 0.0
+        else:
+            cr[i][2] = 2 * p * r / (p + r)
     cr=pd.DataFrame(cr,columns=["Precision","Recall","F1-Score"],index=classes)
     return cr
 

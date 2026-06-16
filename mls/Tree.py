@@ -139,11 +139,18 @@ class DecisionTreeClassifier:
         
         child_y1=np.bincount(childNode.y1,minlength=self.class_length)
         child_y2=np.bincount(childNode.y2,minlength=self.class_length)
+        
+        y1_sum = np.sum(child_y1)
+        y2_sum = np.sum(child_y2)
+        total = y1_sum + y2_sum
 
-        postSplitImp=np.sum(child_y1)*(1-np.sum(np.square(child_y1/np.sum(child_y1))))
-        postSplitImp=postSplitImp+np.sum(child_y2)*(1-np.sum(np.square(child_y2/np.sum(child_y2))))
-        postSplitImp=postSplitImp/(np.sum(child_y1) + np.sum(child_y2))
+        if total == 0:
+            postSplitImp = 0.0
+        else:
+            imp1 = 1 - np.sum(np.square(child_y1 / y1_sum)) if y1_sum != 0 else 0.0
+            imp2 = 1 - np.sum(np.square(child_y2 / y2_sum)) if y2_sum != 0 else 0.0
 
+            postSplitImp = (y1_sum * imp1 + y2_sum * imp2) / total
         return postSplitImp<preSplitImp
     
     def _buildTree(self,X,y,parentNode: _TreeNode,depth,maxDepth,minSamples):
