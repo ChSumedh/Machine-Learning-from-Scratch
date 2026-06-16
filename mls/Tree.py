@@ -124,7 +124,7 @@ class DecisionTreeClassifier:
         if len(impurities)==0:
             return None
         selectedNode=heapq.heappop(impurities)[1]
-        newNode=_TreeNode(y[X[:,selectedNode]>=thresholds[selectedNode]],y[~X[:,selectedNode]>=thresholds[selectedNode]],
+        newNode=_TreeNode(y[X[:,selectedNode]>=thresholds[selectedNode]],y[X[:,selectedNode]<thresholds[selectedNode]],
                           thresholds[selectedNode],selectedNode)
         return newNode
     
