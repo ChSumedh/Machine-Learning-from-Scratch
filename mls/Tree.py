@@ -252,7 +252,6 @@ class DecisionTreeRegressor:
         self.min_samples_split = min_samples
         self.max_features = max_features
 
-    # ---------------- utils ----------------
     def _check(self, X, y):
         if X is None or y is None:
             raise ValueError("X and y cannot be None")
@@ -272,7 +271,6 @@ class DecisionTreeRegressor:
             return 0.0
         return np.mean((y - np.mean(y)) ** 2)
 
-    # ---------------- split finder ----------------
     def _selectSplit(self, X, y, features):
         best_loss = float("inf")
         best_node = None
@@ -306,7 +304,6 @@ class DecisionTreeRegressor:
 
         return best_node
 
-    # ---------------- build tree ----------------
     def _buildTree(self, X, y, node, depth):
 
         if node is None:
@@ -345,7 +342,6 @@ class DecisionTreeRegressor:
 
         return node
 
-    # ---------------- fit ----------------
     def fit(self, X, y):
         self.X, self.y = self._check(X, y)
 
@@ -355,7 +351,6 @@ class DecisionTreeRegressor:
 
         self.root = self._buildTree(self.X, self.y, self.root, depth=1)
 
-    # ---------------- traverse ----------------
     def _traverse(self, x):
         node = self.root
 
@@ -374,7 +369,6 @@ class DecisionTreeRegressor:
 
         return node
 
-    # ---------------- predict ----------------
     def predict(self, X):
         if self.root is None:
             raise ValueError("Model not trained")
