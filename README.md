@@ -51,11 +51,15 @@ cc90-4558-9a33-0136813a5875" />
   - Logistic Regression
   - Naive Bayes Classifier
   - Gaussian Classifier
+  - Decision Tree Classifier
+  - Random Forest Classifier
 
 - **Regression**
   - Linear Regression
   - K-Nearest Neighbors (KNN) Regressor
   - Stochastic Gradient Descent (SGD) Regressor
+  - Decision Tree Regressor
+  - Random Forest Regressor
 
 ### **Preprocessing**
 - **Scalers**
